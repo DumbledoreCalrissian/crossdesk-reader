@@ -1,5 +1,6 @@
-add_executable(ReadingCalendarTest ReadingCalendarTest.cpp
+add_executable(ReadingCalendarTest ReadingCalendarTest.cpp ReadingCalendarMonthTest.cpp
   ${REPO_ROOT}/src/util/ReadingCalendar.cpp
+  ${REPO_ROOT}/src/util/ReadingCalendarMonth.cpp
   ${REPO_ROOT}/src/util/ReadingCalendarStore.cpp)
 target_include_directories(ReadingCalendarTest PRIVATE
   ${REPO_ROOT}/test/reading_stats/stubs ${REPO_ROOT}/src/util)
