@@ -111,6 +111,20 @@ Upon turning the device on for the first time, you will be placed on the **[Home
 
 The Home screen is the main entry point to the firmware. From here you can navigate to **[Reading Mode](#4-reading-mode)** with the most recently read book, **[Browse Files](#33-browse-files-screen)**, the **[Library](#34-library-screen)**, or **[Settings](#36-settings)**. **[File Transfer](#35-file-transfer-screen)** opens from the top-right icon in Browse Files.
 
+In the **Desk** theme, tap the reading-calendar day grid to open **Statistics**
+for the current month. Month arrows and page buttons browse retained history;
+the page shows daily reading levels, minutes, reading and goal days, the best
+day, goal runs and a signed comparison with the previous month. For the current
+month, the comparison uses the same dates of the previous month and the run row
+shows the current streak. Incomplete comparisons are hidden. The page is
+read-only; Back or the Home gesture returns with **Apps** selected.
+
+The calendar totals/goal footer still opens **Settings → Reader** with
+**Daily reading goal** selected. Clock-problem messages open **Settings → System**
+with **Clock** selected; unreadable history has no tap action. Statistics has no
+Apps or other-theme Home menu entry yet. See [Reading calendar](docs/reading-calendar.md)
+for the shade legend, empty states and history limits.
+
 ### 3.2 Reading Mode
 
 See [Reading Mode](#4-reading-mode) below for more information.

@@ -28,7 +28,8 @@ enum class HomeMenuItem {
   TODO,
   POMODORO,
   SUDOKU,
-  WEATHER
+  WEATHER,
+  DESK_APPS  // Focus-only return target for Desk widget screens, not a menu entry.
 };
 
 /**

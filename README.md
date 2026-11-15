@@ -30,8 +30,9 @@ Files, Library, Settings, Todo, Pomodoro, Sudoku, Weather and any Plugins or OPD
 shortcut) open from **Apps** at the top right of Home. Tapping the Todo preview
 opens Todo; its bullets do not complete tasks.
 Its [reading calendar](docs/reading-calendar.md) shows monthly minutes, a streak
-of days meeting your daily reading goal and the goal itself; tap the goal to change
-it in Settings.
+of days meeting your daily reading goal and the goal itself. Tap the day grid
+to open read-only monthly **Statistics**, or tap the totals/goal footer to change
+the goal in Settings. Statistics currently opens only from this Desk widget.
 Its [weather widget and screen](docs/weather.md) show a manually refreshed
 three-day forecast, humidity and precipitation for a city you choose; tap the widget
 to open Weather. When there is no data, each widget says why instead of disappearing.

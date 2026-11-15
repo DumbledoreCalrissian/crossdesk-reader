@@ -57,6 +57,8 @@ class DeskHomeUi final {
   bool weatherTapped() const;
   // Calendar totals and goal row; opens Reader settings, where the goal is edited.
   bool goalTapped() const;
+  // The day-grid band only; the footer keeps its goal shortcut.
+  bool calendarTapped() const;
   // Calendar while the clock is unset or behind the history; opens Clock settings.
   bool clockTapped() const;
 
@@ -78,6 +80,7 @@ class DeskHomeUi final {
   int widgetsRuleY() const;
   int footerActionY() const;
   Rect calendarFooterRect() const;
+  Rect calendarGridRect() const;
   enum class WeatherState : uint8_t { Forecast, Setup, NoForecast, Unavailable };
   WeatherState weatherState = WeatherState::Unavailable;
   void loadWeather();

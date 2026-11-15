@@ -589,7 +589,7 @@ void DeskHomeUi::drawCalendar() const {
     renderer.drawText(SMALL_FONT_ID, x + col * cell + (cell - renderer.getTextWidth(SMALL_FONT_ID, text)) / 2,
                       ruleY + 4, text, true);
   }
-  const int gridY = ruleY + 4 + line + 4;
+  const int gridY = calendarGridRect().y;
   const int rowH = std::max(24, line + 4);
   for (int day = 1; day <= calendarDays; ++day) {
     const int pos = calendarFirstWeekday + day - 1;
@@ -635,6 +635,14 @@ bool DeskHomeUi::clockTapped() const {
   return input.rowTouch(row, r.y, height, 1, r.x, r.x + r.width, height) == MappedInputManager::RowTouch::Tap;
 }
 
+bool DeskHomeUi::calendarTapped() const {
+  if (calendarState != CalendarState::Month) return false;
+  const auto area = calendarGridRect();
+  int row = -1;
+  return input.rowTouch(row, area.y, area.height, 1, area.x, area.x + area.width, area.height) ==
+         MappedInputManager::RowTouch::Tap;
+}
+
 bool DeskHomeUi::goalTapped() const {
   if (calendarState != CalendarState::Month) return false;
   const auto area = calendarFooterRect();
@@ -658,10 +666,16 @@ Rect DeskHomeUi::weatherRect() const {
   const int top = todo.y + todo.height + LOWER_BAND_GAP;
   return Rect{content.x + content.width - padding - width, top, width, renderer.getScreenHeight() - top - 16};
 }
-int DeskHomeUi::widgetsRuleY() const {
+Rect DeskHomeUi::calendarGridRect() const {
+  const auto r = calendarRect();
   const int line = renderer.getLineHeight(SMALL_FONT_ID);
-  const int gridY = weatherRect().y + renderer.getLineHeight(UI_10_FONT_ID) + 4 + 4 + line + 4;
-  return gridY + 6 * std::max(24, line + 4) + 6;
+  const int top = r.y + renderer.getLineHeight(UI_10_FONT_ID) + 4 + 4 + line + 4;
+  // Home reserves six week rows so the footer never moves between months.
+  return Rect{r.x, top, r.width, 6 * std::max(24, line + 4) + 6};
+}
+int DeskHomeUi::widgetsRuleY() const {
+  const auto grid = calendarGridRect();
+  return grid.y + grid.height;
 }
 void DeskHomeUi::loadWeather() {
   weatherData.cached = false;

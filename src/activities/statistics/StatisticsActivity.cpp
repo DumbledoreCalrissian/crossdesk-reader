@@ -3,9 +3,6 @@
 #include <FreeInkUIIcon.h>
 #include <HalClock.h>
 #include <HalDisplay.h>
-#ifdef SIMULATOR
-#include <HalMemory.h>
-#endif
 #include <I18n.h>
 #include <Memory.h>
 
@@ -44,15 +41,6 @@ void StatisticsActivity::onEnter() {
   {
     RenderLock lock(*this);
     load();
-#ifdef SIMULATOR
-    // TEMP(M2): sizes are real; simulator heap totals are configurable mocks.
-    const auto internal = HalMemory::getInternalHeap();
-    const auto psram = HalMemory::getPsramHeap();
-    LOG_DBG("STATS", "Sizes: activity=%u model=%u store=%u; mock internal free/largest=%u/%u PSRAM=%u/%u",
-            unsigned(sizeof(*this)), unsigned(sizeof(readingcalendar::Model)), unsigned(sizeof(readingcalendar::Store)),
-            unsigned(internal.freeBytes), unsigned(internal.largestBlockBytes), unsigned(psram.freeBytes),
-            unsigned(psram.largestBlockBytes));
-#endif
     const char* hint = nullptr;
     switch (state) {
       case State::NoClock:
@@ -145,7 +133,7 @@ void StatisticsActivity::activate(fui::ActionId id) {
   app.clearTapFlash();
   switch (id) {
     case Back:
-      activityManager.goHome();
+      activityManager.goHome(HomeMenuItem::DESK_APPS);
       return;
     case Previous:
       step(-1);

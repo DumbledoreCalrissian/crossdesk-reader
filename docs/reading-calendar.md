@@ -4,7 +4,8 @@ The Desk Home theme shows a monthly reading calendar, total minutes read this
 month, a streak of days meeting your reading goal and the current goal. The widget
 updates when you enter Home. Tapping the totals or goal line opens **Settings → Reader** with
 **Daily reading goal** selected;
-dates do nothing when tapped. Buttons continue to select books and the app menu.
+tap the day grid to open **Statistics** for the current month. Buttons on Home
+continue to select books and the app menu.
 
 Choose **Settings → Reader → Daily reading goal**. The default is 30 minutes;
 choices are 5, 10, 15, 20, 30, 45 and 60 minutes. Reading in short bursts adds up
@@ -22,6 +23,34 @@ to five minutes count; menus, loading and longer idle stays do not. Other format
 are unchanged. Daily history starts with this feature; old cumulative book totals
 cannot reconstruct past reading dates. Resetting a book's statistics does not
 reset the calendar.
+
+## Monthly Statistics
+
+Statistics is read-only. Use the left/right month arrows or page buttons to
+browse from the oldest retained month to the current month. An arrow disappears
+at each limit. Back or the Home gesture returns to Desk Home with **Apps**
+selected. Dates and figures on Statistics have no tap action. Statistics currently
+opens only from the Desk calendar grid, not from Apps or other Home themes.
+
+The grid distinguishes no reading, reading below the recorded daily goal,
+meeting the goal, and an hour or more on a goal day. Its legend explains the
+shades. A folded corner marks the best day (the earliest if tied), today has an
+outline, future dates are dotted, and dates before tracking are bare numbers.
+Past goal results stay unchanged when you edit today's goal.
+
+The figures show total minutes, days with reading, days meeting their goal,
+the best day and the longest goal run within a past month. The current month
+shows figures so far and the current goal streak, which can continue from the
+previous month. Durations are rounded down to minutes. A comparison shows the
+signed difference from the full previous month, or from the same dates of the
+previous month for the current month (up to that month's last day). It is hidden
+if that previous period is not fully tracked.
+
+An empty month shows only minutes and days read with a message. The first
+retained month notes when tracking began; older dates cannot be reconstructed
+once they leave the 366-day window. With no history, Statistics explains how to
+start. It does not edit goals, reset history or change any saved reading data.
+Goal editing stays in **Settings → Reader → Daily reading goal**.
 
 ## Clock and saves
 
