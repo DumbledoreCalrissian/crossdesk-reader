@@ -13,6 +13,12 @@
 #include <Utf8.h>
 #include <Xtc.h>
 
+#ifdef SIMULATOR
+#include <cstdlib>
+
+#include "activities/statistics/StatisticsActivity.h"
+#endif
+
 #include <algorithm>
 #include <cstring>
 #include <vector>
@@ -430,6 +436,23 @@ void HomeActivity::loopDeskMenu() {
 }
 
 void HomeActivity::loop() {
+#ifdef SIMULATOR
+  // TEMP(M2): review entry until the Desk calendar route is implemented.
+  static bool openedStatistics = false;
+  if (!openedStatistics && std::getenv("CROSSPOINT_SIM_OPEN_STATISTICS")) {
+    openedStatistics = true;
+    auto statistics = makeUniqueNoThrow<StatisticsActivity>(renderer, mappedInput);
+    if (statistics) {
+      if (const auto* orientation = std::getenv("CROSSPOINT_SIM_STATS_ORIENTATION")) {
+        const int value = std::atoi(orientation);
+        if (value >= 0 && value < 4) renderer.setOrientation(static_cast<GfxRenderer::Orientation>(value));
+      }
+      activityManager.replaceActivity(std::move(statistics));
+    } else
+      LOG_ERR("HOME", "OOM: statistics (%u bytes)", unsigned(sizeof(StatisticsActivity)));
+    return;
+  }
+#endif
   const int menuCount = getMenuItemCount();
   const auto& metrics = UITheme::getInstance().getMetrics();
 
