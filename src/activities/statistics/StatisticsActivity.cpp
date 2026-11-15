@@ -133,7 +133,7 @@ void StatisticsActivity::activate(fui::ActionId id) {
   app.clearTapFlash();
   switch (id) {
     case Back:
-      activityManager.goHome(HomeMenuItem::DESK_APPS);
+      activityManager.goHome(HomeMenuItem::STATISTICS);
       return;
     case Previous:
       step(-1);

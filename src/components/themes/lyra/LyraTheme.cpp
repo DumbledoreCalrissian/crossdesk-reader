@@ -23,6 +23,7 @@
 #include "components/icons/pomodoro.h"
 #include "components/icons/recent.h"
 #include "components/icons/settings2.h"
+#include "components/icons/statistics.h"
 #include "components/icons/sudoku.h"
 #include "components/icons/todo.h"
 #include "components/icons/transfer.h"
@@ -73,6 +74,8 @@ const uint8_t* iconForName(UIIcon icon) {
       return BlocksIcon;
     case UIIcon::Weather:
       return WeatherMenuIcon;
+    case UIIcon::Statistics:
+      return StatisticsMenuIcon;
     default:
       return nullptr;
   }

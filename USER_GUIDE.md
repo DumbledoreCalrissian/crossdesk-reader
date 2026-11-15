@@ -119,10 +119,14 @@ month, the comparison uses the same dates of the previous month and the run row
 shows the current streak. Incomplete comparisons are hidden. The page is
 read-only; Back or the Home gesture returns with **Apps** selected.
 
+Statistics also opens from **Apps → Statistics** in Desk and from the Home
+menu in the other themes. In Cover Grid, use the chart icon in the bottom
+shortcut strip. Back or the Home gesture returns to the Statistics shortcut
+in those themes; Desk returns with **Apps** selected.
+
 The calendar totals/goal footer still opens **Settings → Reader** with
 **Daily reading goal** selected. Clock-problem messages open **Settings → System**
-with **Clock** selected; unreadable history has no tap action. Statistics has no
-Apps or other-theme Home menu entry yet. See [Reading calendar](docs/reading-calendar.md)
+with **Clock** selected; unreadable history has no tap action. See [Reading calendar](docs/reading-calendar.md)
 for the shade legend, empty states and history limits.
 
 ### 3.2 Reading Mode

@@ -139,6 +139,8 @@ const char* itemLabel(const HomeMenuItem item) {
   switch (item) {
     case HomeMenuItem::WEATHER:
       return tr(STR_WEATHER);
+    case HomeMenuItem::STATISTICS:
+      return tr(STR_STATS_TITLE);
     case HomeMenuItem::FILE_BROWSER:
       return tr(STR_BROWSE_FILES);
     case HomeMenuItem::LIBRARY:
@@ -180,6 +182,8 @@ UIIcon itemIcon(const HomeMenuItem item) {
       return Sudoku;
     case HomeMenuItem::WEATHER:
       return Weather;
+    case HomeMenuItem::STATISTICS:
+      return Statistics;
     default:
       return None;
   }

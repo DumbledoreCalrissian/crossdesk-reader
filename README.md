@@ -26,13 +26,14 @@ cover, and Cover Grid thumbnails show each book's percentage and bar.
 The Desk theme shows the current book's cover large, with its title, progress,
 reading time and pages turned, and the other recent books as a swipeable strip
 of small covers with their titles and progress bars. Its other apps (Browse
-Files, Library, Settings, Todo, Pomodoro, Sudoku, Weather and any Plugins or OPDS
+Files, Library, Settings, Todo, Pomodoro, Sudoku, Statistics, Weather and any Plugins or OPDS
 shortcut) open from **Apps** at the top right of Home. Tapping the Todo preview
 opens Todo; its bullets do not complete tasks.
 Its [reading calendar](docs/reading-calendar.md) shows monthly minutes, a streak
 of days meeting your daily reading goal and the goal itself. Tap the day grid
 to open read-only monthly **Statistics**, or tap the totals/goal footer to change
-the goal in Settings. Statistics currently opens only from this Desk widget.
+the goal in Settings. Statistics also opens from Desk **Apps** and the other
+themes’ Home menus (the chart icon in Cover Grid).
 Its [weather widget and screen](docs/weather.md) show a manually refreshed
 three-day forecast, humidity and precipitation for a city you choose; tap the widget
 to open Weather. When there is no data, each widget says why instead of disappearing.

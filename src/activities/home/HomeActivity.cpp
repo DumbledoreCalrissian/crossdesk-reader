@@ -36,7 +36,7 @@
 
 int HomeActivity::getMenuItemCount() const {
   if (deskUi) return static_cast<int>(recentBooks.size()) + 1;
-  int count = 6;  // File Browser, Library, Settings, Todo, Pomodoro, Sudoku
+  int count = 7;  // File Browser, Library, Settings, Todo, Pomodoro, Sudoku, Statistics
   if (!recentBooks.empty()) {
     count += recentBooks.size();
   }
@@ -386,6 +386,13 @@ bool HomeActivity::openMenuItem(const HomeMenuItem item) {
       }
       LOG_ERR("WEATHER", "OOM: activity (%u bytes)", unsigned(sizeof(WeatherActivity)));
       return false;
+    case HomeMenuItem::STATISTICS:
+      if (auto statistics = makeUniqueNoThrow<StatisticsActivity>(renderer, mappedInput)) {
+        activityManager.replaceActivity(std::move(statistics));
+        return true;
+      }
+      LOG_ERR("HOME", "OOM: statistics (%u bytes)", unsigned(sizeof(StatisticsActivity)));
+      return false;
     case HomeMenuItem::TODO:
       if (auto todo = makeUniqueNoThrow<TodoActivity>(renderer, mappedInput)) {
         activityManager.replaceActivity(std::move(todo));
@@ -541,13 +548,8 @@ void HomeActivity::loop() {
       return;
     }
     if (deskUi->calendarTapped()) {
-      auto statistics = makeUniqueNoThrow<StatisticsActivity>(renderer, mappedInput);
-      if (!statistics) {
-        LOG_ERR("HOME", "OOM: statistics (%u bytes)", unsigned(sizeof(StatisticsActivity)));
-        return;
-      }
       haptic_feedback::touchAction();
-      activityManager.replaceActivity(std::move(statistics));
+      openMenuItem(HomeMenuItem::STATISTICS);
       return;
     }
     if (deskUi->goalTapped()) {
@@ -731,9 +733,9 @@ void HomeActivity::render(RenderLock&&) {
 
   // Build menu items dynamically
   // File Transfer lives in the file browser's root header.
-  std::vector<const char*> menuItems = {tr(STR_BROWSE_FILES), tr(STR_LIBRARY),  tr(STR_SETTINGS_TITLE),
-                                        tr(STR_TODO),         tr(STR_POMODORO), tr(STR_SUDOKU)};
-  std::vector<UIIcon> menuIcons = {Folder, Library, Settings, Todo, Pomodoro, Sudoku};
+  std::vector<const char*> menuItems = {tr(STR_BROWSE_FILES), tr(STR_LIBRARY), tr(STR_SETTINGS_TITLE), tr(STR_TODO),
+                                        tr(STR_POMODORO),     tr(STR_SUDOKU),  tr(STR_STATS_TITLE)};
+  std::vector<UIIcon> menuIcons = {Folder, Library, Settings, Todo, Pomodoro, Sudoku, Statistics};
 
   if (slotItem() != HomeMenuItem::NONE) {
     menuItems.insert(menuItems.begin() + 2, hasPlugins ? tr(STR_PLUGINS) : tr(STR_OPDS_BROWSER));

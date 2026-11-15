@@ -28,9 +28,11 @@ reset the calendar.
 
 Statistics is read-only. Use the left/right month arrows or page buttons to
 browse from the oldest retained month to the current month. An arrow disappears
-at each limit. Back or the Home gesture returns to Desk Home with **Apps**
-selected. Dates and figures on Statistics have no tap action. Statistics currently
-opens only from the Desk calendar grid, not from Apps or other Home themes.
+at each limit. Statistics also opens from **Apps → Statistics** in Desk and
+from the Home menu in the other themes (the chart icon in Cover Grid). Back or
+the Home gesture returns with **Apps** selected in Desk, or with the Statistics
+shortcut selected in the other themes. Dates and figures on Statistics have no
+tap action.
 
 The grid distinguishes no reading, reading below the recorded daily goal,
 meeting the goal, and an hour or more on a goal day. Its legend explains the

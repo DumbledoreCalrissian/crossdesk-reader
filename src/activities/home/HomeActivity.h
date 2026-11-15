@@ -74,6 +74,8 @@ class HomeActivity final : public Activity {
     if (item == HomeMenuItem::POMODORO) return i;
     ++i;
     if (item == HomeMenuItem::SUDOKU) return i;
+    ++i;
+    if (item == HomeMenuItem::STATISTICS) return i;
     return 0;
   }
 

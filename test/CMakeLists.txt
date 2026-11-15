@@ -123,3 +123,5 @@ add_subdirectory(pomodoro)
 add_subdirectory(reading_calendar)
 
 add_subdirectory(weather)
+
+add_test(NAME home_menu_order COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_home_menu_order.py)

@@ -12,6 +12,7 @@ inline HomeMenuItem homeMenuItemAt(const int idx, const HomeMenuItem slot) {
   if (idx == i++) return HomeMenuItem::SETTINGS_MENU;
   if (idx == i++) return HomeMenuItem::TODO;
   if (idx == i++) return HomeMenuItem::POMODORO;
-  if (idx == i) return HomeMenuItem::SUDOKU;
+  if (idx == i++) return HomeMenuItem::SUDOKU;
+  if (idx == i) return HomeMenuItem::STATISTICS;
   return HomeMenuItem::NONE;
 }
