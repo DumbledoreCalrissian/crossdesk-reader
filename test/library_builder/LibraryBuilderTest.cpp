@@ -113,6 +113,16 @@ TEST(LibraryBookFileTest, RejectsOtherFilesAndHiddenNames) {
   EXPECT_FALSE(isLibraryBookFile("._book.epub"));
 }
 
+TEST(LibraryBookFileTest, RejectsFirmwareWrittenTextFiles) {
+  EXPECT_FALSE(isLibraryBookFile("/crash_report.txt"));
+  EXPECT_FALSE(isLibraryBookFile("/My Clippings.txt"));
+  EXPECT_FALSE(isLibraryBookFile("My Clippings.txt"));
+  EXPECT_FALSE(isLibraryBookFile("/MY CLIPPINGS.TXT"));
+  EXPECT_TRUE(isLibraryBookFile("/Books/My Clippings.txt"));  // Picco fork keeps nested namesakes.
+  EXPECT_TRUE(isLibraryBookFile("/My Clippings.txt/book.epub"));
+  EXPECT_TRUE(isLibraryBookFile("/Not My Clippings.txt"));
+}
+
 TEST(LibraryBookFileTest, RejectsSystemFoldersWithoutHidingOrdinaryTextBooks) {
   EXPECT_FALSE(isLibraryBookFile("/XTCache/fontPos.txt"));
   EXPECT_FALSE(isLibraryBookFile("/Backup/XTCache/epub/book/language.txt"));
