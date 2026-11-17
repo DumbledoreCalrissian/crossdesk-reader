@@ -225,7 +225,7 @@ Books cannot be removed from your device through Calibre. Use the web interface 
 
 ### 3.6 Settings
 
-Settings are grouped into **System**, **Display**, **Reader**, **Controls**, **Library**, and **Connectivity**. System contains language, keyboard layouts, hidden-file visibility, file-extension visibility, Clock (where available), firmware updates, and About. Library contains Use Book Metadata, Clear Read Books from Recent List, and Move Finished Books to Read Folder. Time to Sleep is under Display; Clear Reading Cache is under Reader. Connectivity contains Wi-Fi, Bluetooth Page Turner, CrossPoint Sync, OPDS, and the Plugins toggle. The options below describe these settings.
+Settings are grouped into **System**, **Display**, **Reader**, **Controls**, **Library**, and **Connectivity**. System contains language, keyboard layouts, hidden-file visibility, file-extension visibility, Clock (where available), firmware updates, Display Refresh, and About. Library contains Use Book Metadata, Clear Read Books from Recent List, and Move Finished Books to Read Folder. Time to Sleep is under Display; Clear Reading Cache is under Reader. Connectivity contains Wi-Fi, Bluetooth Page Turner, CrossPoint Sync, OPDS, and the Plugins toggle. The options below describe these settings.
 
 #### 3.6.1 Display
 
@@ -375,6 +375,7 @@ Side buttons, and Taps and gestures where supported by the device. See the
 - **OPDS Servers**: Manage one or more OPDS [(Open Publication Distribution System)](https://en.wikipedia.org/wiki/Open_Publication_Distribution_System) libraries for browsing and downloading books. See [OPDS Servers (Multiple Libraries)](#365-opds-servers-multiple-libraries) below.
 
 - **Clear Reading Cache** (**Settings → Reader**): Clear the internal SD card cache.
+- **Display Refresh** (**Settings → System**): Flash the screen black and white 10 times to clear ghosting. Press Back to stop early; the screen ends on white.
 
 - **Use book metadata**: Read the title and author stored inside each book when the Library index is rebuilt. When disabled or unavailable, the Library uses the filename.
 

@@ -313,11 +313,13 @@ bool EpubReaderActivity::loadBook() {
 
   epub->setupCacheDir();
 
+  bool progressLoaded = false;
   HalFile f;
   if (Storage.openFileForRead("ERS", epub->getCachePath() + "/progress.bin", f)) {
     uint8_t data[10];
     int dataSize = f.read(data, sizeof(data));
     if (dataSize == 4 || dataSize == 6 || dataSize == 10) {
+      progressLoaded = true;
       currentSpineIndex = data[0] + (data[1] << 8);
       nextPageNumber = data[2] + (data[3] << 8);
       if (nextPageNumber == UINT16_MAX) {
@@ -336,7 +338,9 @@ bool EpubReaderActivity::loadBook() {
     }
   }
 
-  if (currentSpineIndex == 0) {
+  // Only a book with no saved position starts at the text reference; a reader
+  // who paged back into spine 0 stays there.
+  if (!progressLoaded && currentSpineIndex == 0) {
     int textSpineIndex = epub->getSpineIndexForTextReference();
     if (textSpineIndex != 0) {
       currentSpineIndex = textSpineIndex;
@@ -497,8 +501,7 @@ void EpubReaderActivity::idlePrewarmTick() {
   if (!lock.ownsLock()) return;
 
   if (!section || section->isBuilding() || !renderer.hasFrameBuffer() || overlay != Overlay::None ||
-      lastRenderCompleteMs == 0 || ESP.getFreeHeap() <= RENDER_MIN_FREE_HEAP ||
-      ESP.getMaxAllocHeap() <= BACKGROUND_BUILD_MIN_MAX_ALLOC) {
+      lastRenderCompleteMs == 0) {
     return;
   }
   if (idlePrewarmSpine != currentSpineIndex || idlePrewarmPage != section->currentPage) {
@@ -516,6 +519,10 @@ void EpubReaderActivity::idlePrewarmTick() {
   // Multi-page TTF vector fonts on PSRAM prewarm immediately (0ms).
   const unsigned long debounceMs = (maxLookahead > 1) ? 0UL : 400UL;
   if (debounceMs > 0 && millis() - lastRenderCompleteMs <= debounceMs) {
+    return;
+  }
+
+  if (ESP.getFreeHeap() <= RENDER_MIN_FREE_HEAP || ESP.getMaxAllocHeap() <= BACKGROUND_BUILD_MIN_MAX_ALLOC) {
     return;
   }
 
@@ -1893,7 +1900,7 @@ void EpubReaderActivity::renderBook() {
             return;
           }
           while (!section->isBuildComplete() &&
-                 (anchorJump               ? !section->findAnchor(pendingAnchor)
+                 (anchorJump               ? !section->findAnchorDuringBuild(pendingAnchor)
                   : offsetJump.has_value() ? !section->buildReachedVisibleTextOffset(*offsetJump)
                                            : static_cast<int>(section->pageCount) <= target)) {
             if (buildPopupPending && millis() - buildStartMs >= BUILD_POPUP_DEADLINE_MS) {
@@ -2060,12 +2067,13 @@ void EpubReaderActivity::renderBook() {
     markPageRendered();
   }
 
+  const int estimatedTotalPages = section->estimatedTotalPages();
   if (currentSpineIndex != lastSavedSpineIndex || section->currentPage != lastSavedPage ||
-      section->pageCount != lastSavedPageCount) {
-    if (saveProgress(currentSpineIndex, section->currentPage, section->estimatedTotalPages())) {
+      estimatedTotalPages != lastSavedPageCount) {
+    if (saveProgress(currentSpineIndex, section->currentPage, estimatedTotalPages)) {
       lastSavedSpineIndex = currentSpineIndex;
       lastSavedPage = section->currentPage;
-      lastSavedPageCount = section->estimatedTotalPages();
+      lastSavedPageCount = estimatedTotalPages;
     }
   }
 
@@ -2606,14 +2614,13 @@ void EpubReaderActivity::renderStatusBar() const {
       textYOffset += UITheme::getInstance().getMetrics().statusBarVerticalMargin;
     }
   } else if (sb.titleMode == CrossPointSettings::STATUS_BAR_TITLE::CHAPTER_TITLE) {
-    title = tr(STR_UNNAMED);
-    if (epub) {
+    // The lookup reads book.bin; a page render draws the bar several times.
+    if (statusTitleSpine != currentSpineIndex && epub) {
       const int tocIndex = epub->getTocIndexForSpineIndex(currentSpineIndex);
-      if (tocIndex != -1) {
-        const auto tocItem = epub->getTocItem(tocIndex);
-        title = tocItem.title;
-      }
+      statusTitle = tocIndex != -1 ? epub->getTocItem(tocIndex).title : tr(STR_UNNAMED);
+      statusTitleSpine = currentSpineIndex;
     }
+    title = epub ? statusTitle : tr(STR_UNNAMED);
   } else if (sb.titleMode == CrossPointSettings::STATUS_BAR_TITLE::BOOK_TITLE) {
     title = epub ? epub->getTitle() : "";
   }
