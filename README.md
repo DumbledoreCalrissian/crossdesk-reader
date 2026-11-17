@@ -4,7 +4,7 @@ A personal BOOX Picco build based on
 [CrossPoint Reader](https://github.com/crosspoint-reader/crosspoint-reader).
 This is an unofficial fork, not supported by the original project or BOOX.
 
-**Experimental: tested in the desktop simulator, not on a physical Picco.**
+**Experimental: runs on a physical BOOX Picco; testing is ongoing.**
 
 ## Features
 
@@ -53,7 +53,9 @@ pio run -e simulator_picco -t run_simulator
 See [setup instructions](docs/contributing/getting-started.md) for the macOS
 requirements. Put books in `fs_/books/`; set `CROSSPOINT_SIM_SD` to use another
 virtual card directory. Build native Picco firmware with `pio run -e picco`.
-Hardware installation and recovery have not been validated for this fork.
+`pio run -e picco -t upload` writes only the app partition and keeps the stock
+bootloader and recovery partition. Back up the full flash before your first
+upload; recovery has not been tested.
 
 ## Help
 
