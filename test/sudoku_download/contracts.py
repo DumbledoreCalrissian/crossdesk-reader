@@ -143,6 +143,7 @@ sleep_harness = r'''
 #include <cassert>
 #include <cstdint>
 #include <string>
+#include "util/PowerButtonClickInput.h"
 #include "util/PowerButtonInput.h"
 #define LOG_DBG(...) ((void)0)
 unsigned long now = 1000;
@@ -162,20 +163,26 @@ struct CrossPointSettings {
   unsigned long getPowerButtonDuration() { return shortPwrBtn == SLEEP ? 10 : 400; }
 } SETTINGS;
 struct Input {
-  PowerButtonInput clicks;
+  PowerButtonInput hold;
+  PowerButtonClickInput clicks;
   bool sleep = false, deferredSleep = false;
   bool powerSleepClick() { return sleep; }
+  bool powerSleepRequested() const { return hold.shouldSleep(); }
+  bool wasPowerSingleClick() const { return false; }
   void resetPowerButtonInput() { clicks.reset(); sleep = deferredSleep = false; }
+  void consumePowerGesture() { hold.consume(); resetPowerButtonInput(); }
+  void begin(bool suppressHold, bool held) { hold.begin(suppressHold, held); resetPowerButtonInput(); }
   void sample(bool released = false) {
     sleep = false;
-    if (BoardConfig::x4Pro && !gpio.down) {
-      sleep = clicks.update(now, gpio.power, released, gpio.held) == PowerButtonInput::Click::Single;
+    hold.update(gpio.power, released, (gpio.power || released) ? gpio.held : 0, SETTINGS.getPowerButtonDuration());
+    if (BoardConfig::x4Pro && !gpio.down && !hold.suppressesHold()) {
+      sleep = clicks.update(now, gpio.power, released && hold.wasShortReleased(), gpio.held) ==
+              PowerButtonClickInput::Click::Single;
     } else clicks.reset();
     deferredSleep |= sleep;
   }
 } mappedInputManager;
 unsigned long allowSleepAt = 0;
-bool wakePowerReleasePending = false;
 bool requestManualSleep() { SLEEP_DECISION
 struct RenderLock { template<class T> RenderLock(T&) {} };
 struct Settings {
@@ -192,12 +199,14 @@ int main(int argc, char** argv) {
   assert(argc == 2);
   const bool screenshot = std::string(argv[1]) == "screenshot";
   const bool wake = std::string(argv[1]) == "wake";
+  mappedInputManager.begin(true, wake);
   if (wake) {
     gpio.power = true; gpio.held = 2000;
-    assert(!requestManualSleep());
+    mappedInputManager.sample(); assert(!requestManualSleep());
+    gpio.power = false; mappedInputManager.sample(true);
   }
   gpio.power = false; gpio.held = 0;
-  assert(!requestManualSleep());
+  mappedInputManager.sample(); assert(!requestManualSleep());
   if (screenshot) {
     BoardConfig::x4Pro = true;
     SETTINGS.shortPwrBtn = CrossPointSettings::SLEEP;
@@ -212,7 +221,7 @@ int main(int argc, char** argv) {
     assert(!mappedInputManager.deferredSleep);
   }
   gpio.power = true; gpio.held = 500; now += 1000;
-  assert(requestManualSleep());
+  mappedInputManager.sample(); assert(requestManualSleep());
   gpio.power = false; mappedInputManager.sample();
   assert(requestManualSleep());  // Unwinding must retain the request after release.
   Settings settings;
@@ -233,7 +242,7 @@ with tempfile.TemporaryDirectory() as directory:
     subprocess.run(command, check=True)
     for scenario in ('hold', 'wake', 'screenshot'):
         subprocess.run([str(path / 'sleep'), scenario], check=True)
-    source.write_text(sleep_harness.replace('    mappedInputManager.resetPowerButtonInput();', ''))
+    source.write_text(sleep_harness.replace('    mappedInputManager.consumePowerGesture();', ''))
     subprocess.run(command, check=True)
     assert subprocess.run([str(path / 'sleep'), 'screenshot'], capture_output=True).returncode != 0
 print('Manual sleep retention, wake/screenshot guards and no transfer reentry PASS (unsafe variant rejected)')

@@ -97,6 +97,7 @@ void UsbDriveActivity::loop() {
   }
   if (canExitWithInput && (mappedInput.wasPressed(MappedInputManager::Button::Back) ||
                            mappedInput.wasPressed(MappedInputManager::Button::Power))) {
+    if (mappedInput.wasPressed(MappedInputManager::Button::Power)) mappedInput.consumePowerGesture();
     restartAfterSession();
     return;
   }
