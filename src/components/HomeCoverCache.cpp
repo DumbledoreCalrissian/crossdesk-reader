@@ -32,6 +32,8 @@ void HomeCoverCache::invalidate(size_t index) {
 
 void HomeCoverCache::prepare() {
   const int orientation = static_cast<int>(renderer.getOrientation());
+  // Night mode stores images pre-inverted, so a snapshot from the other
+  // polarity would paste back as a negative.
   const bool inverted = display.isInverted();
   if (coverCacheOrientation != orientation || coverCacheInverted != inverted) {
     invalidate();

@@ -161,6 +161,8 @@ struct CrossPointSettings {
   ACTIONS
   int shortPwrBtn = IGNORE, doublePwrBtn = PWR_FRONTLIGHT;
   unsigned long getPowerButtonDuration() { return shortPwrBtn == SLEEP ? 10 : 400; }
+  // The stub's double-click board is the X4 Pro scenario below.
+  static bool hasPowerDoubleClick() { return BoardConfig::x4Pro; }
 } SETTINGS;
 struct Input {
   PowerButtonInput hold;

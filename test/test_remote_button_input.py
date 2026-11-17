@@ -67,6 +67,9 @@ struct CrossPointSettings {
   enum { VIBRATION_OFF, VIBRATION_TOUCH_PAGE };
   POWER_ACTIONS
   int shortPwrBtn = IGNORE, doublePwrBtn = PWR_FRONTLIGHT;
+  static bool hasPowerDoubleClick() {
+    return BoardConfig::ACTIVE.inputStyle != BoardConfig::InputStyle::DigitalConfirmPowerHold;
+  }
   uint16_t getPowerButtonDuration() const { return shortPwrBtn == SLEEP ? 10 : 400; }
   int vibration = VIBRATION_OFF, hapticIntensity = 0;
   int homeButtonTapAction = 0, homeButtonDoubleTapAction = 0, homeButtonLongPressAction = 0;
@@ -392,17 +395,17 @@ release_guard = loop_source.split("  if (mappedInputManager.wasPowerReleaseConsu
     "  if (requestManualSleep()) {", 1)[0]
 assert "  if (mappedInputManager.wasPowerReleaseConsumed()) return;" in loop_source
 manual_sleep = main_source.split("bool requestManualSleep() {", 1)[1].split("\nvoid loop() {", 1)[0]
-sleep_dispatch = manual_sleep.split("  const bool x4ProAwaitingClickWindow =", 1)[1].split(
+sleep_dispatch = manual_sleep.split("  const bool awaitingClickWindow =", 1)[1].split(
     "#if FREEINK_DEVICE_PAPERMONO", 1)[0]
 dispatch_harness = r"""
 bool slept = false, forwardedRelease = false;
 void enterDeepSleep() { slept = true; }
 #define LOG_DBG(...) ((void)0)
 void dispatchSleep(MappedInputManager& mappedInputManager, HalGPIO& gpio,
-                   bool x4ProDoubleClickEnabled, unsigned long allowSleepAt) {
+                   bool powerDoubleClickEnabled, unsigned long allowSleepAt) {
   slept = forwardedRelease = false;
   if (mappedInputManager.wasPowerReleaseConsumed()) {
-""" + release_guard + "  bool pending = false;\n  const bool x4ProAwaitingClickWindow =" + sleep_dispatch + r"""
+""" + release_guard + "  bool pending = false;\n  const bool awaitingClickWindow =" + sleep_dispatch + r"""
   if (pending) {
     enterDeepSleep();
     return;

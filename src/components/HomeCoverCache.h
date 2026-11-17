@@ -33,8 +33,6 @@ class HomeCoverCache {
   size_t coverCacheCapacity = 0;
   size_t coverCacheUsed = 0;
   int coverCacheOrientation = -1;
-  // Night mode stores images pre-inverted; a snapshot from the other polarity
-  // would paste back as a negative.
   bool coverCacheInverted = false;
 
   HalFile coverFile;
