@@ -366,8 +366,8 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
   // Long-press Confirm function in EPUB reader (cycles through LONG_PRESS_MENU_FUNCTION values).
   // Defaults to Disabled so shortcut-based bookmark toggling remains opt-in.
   uint8_t longPressMenuFunction = LP_MENU_DISABLED;
-  // UI Theme
-  uint8_t uiTheme = LYRA;
+  // UI Theme: Desk where PSRAM allows it, otherwise Lyra.
+  uint8_t uiTheme = defaultUiTheme();
   // Sunlight fading compensation
   uint8_t fadingFix = 0;
   // The fading fix compensates the X4/X3 grayscale waveforms; other boards never get it.
@@ -481,6 +481,7 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
   }
   // Frontlight toggle where it shipped enabled; off elsewhere, so a single
   // click has no double-click wait unless the user picks an action.
+  static uint8_t defaultUiTheme();
   static uint8_t defaultDoublePwrBtn() {
     return (BoardConfig::isX4Pro() || BoardConfig::isEegoA4()) ? PWR_FRONTLIGHT : IGNORE;
   }

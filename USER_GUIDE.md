@@ -1,8 +1,8 @@
-# CrossPoint User Guide
+# CrossDesk Reader User Guide
 
-Welcome to the **CrossPoint** firmware. This guide outlines the hardware controls, navigation, and reading features of the device.
+Welcome to **CrossDesk Reader**, a BOOX Picco fork of the CrossPoint firmware. This guide outlines the hardware controls, navigation, and reading features of the device.
 
-- [CrossPoint User Guide](#crosspoint-user-guide)
+- [CrossDesk Reader User Guide](#crossdesk-reader-user-guide)
   - [1. Hardware Overview](#1-hardware-overview)
     - [Button Layout](#button-layout)
     - [Taking a Screenshot](#taking-a-screenshot)
@@ -274,10 +274,12 @@ Settings are grouped into **System**, **Display**, **Reader**, **Controls**, **L
 
 - **UI Theme**: Set which UI theme to use:
   
-  - "Classic" - The original Crosspoint theme
-  - "Lyra" - The new theme for Crosspoint featuring rounded elements and menu icons
+  - "Classic" - The original CrossPoint theme
+  - "Lyra" (default on devices without PSRAM) - The new theme for CrossPoint featuring rounded elements and menu icons
   - "Lyra Extended" - Lyra, but displays 3 books instead of 1 on the **[Home Screen](#31-home-screen)**
   - "RoundedRaff" - A rounded theme with additional visual styling
+  - "Cover Grid" - Recent books as a grid of covers (devices with PSRAM only)
+  - "Desk" (default on devices with PSRAM) - The current book, recent books, Todo, reading calendar and weather on one screen (devices with PSRAM only)
 
 - **Sunlight Fading Fix**: Configure whether to enable a software-fix for the issue where white X4 models may fade when used in direct sunlight:
   

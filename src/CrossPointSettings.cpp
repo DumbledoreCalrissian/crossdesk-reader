@@ -1,6 +1,7 @@
 #include "CrossPointSettings.h"
 
 #include <BlePageTurnerJson.h>
+#include <HalMemory.h>
 #include <I18n.h>
 #include <Logging.h>
 #include <ObfuscationUtils.h>
@@ -111,6 +112,7 @@ void CrossPointSettings::toJson(JsonDocument& doc) const {
   doc["shortPwrBtn"] = shortPwrBtn;
   doc["doublePwrBtn"] = doublePwrBtn;
   doc["doublePwrBtnMigrated"] = true;
+  doc["deskThemeMigrated"] = true;
 
   // Language -- managed by LanguageSelectActivity, not in SettingsList.
   // Stored as ISO code string ("EN", "DE", ...) for stability across enum reorders.
@@ -123,6 +125,12 @@ void CrossPointSettings::toJson(JsonDocument& doc) const {
   }
 
   bleturner::writeJson(ble, doc);
+}
+
+uint8_t CrossPointSettings::defaultUiTheme() {
+  // Same PSRAM test as UITheme::supportsCoverGrid(). Valid only after PSRAM
+  // init, so SETTINGS must not be first used before setup().
+  return HalMemory::getPsramHeap().totalBytes > 0 ? DESK : LYRA;
 }
 
 bool CrossPointSettings::fromJson(JsonVariantConst doc) {
@@ -277,6 +285,12 @@ bool CrossPointSettings::fromJson(JsonVariantConst doc) {
   // stay instant; the marker keeps a later choice.
   if (doc["doublePwrBtnMigrated"].isNull()) {
     if (!BoardConfig::isX4Pro() && !BoardConfig::isEegoA4() && doublePwrBtn == PWR_FRONTLIGHT) doublePwrBtn = IGNORE;
+    needsResave = true;
+  }
+  // CrossDesk fork: Picco files saved before Desk became the default hold the
+  // old Lyra default. Switch them once; the marker keeps a later choice.
+  if (doc["deskThemeMigrated"].isNull()) {
+    if (BoardConfig::isPicco() && uiTheme == LYRA && defaultUiTheme() == DESK) uiTheme = DESK;
     needsResave = true;
   }
   if (BoardConfig::hasHomeKey() && doc["homeButtonLongPressAction"].isNull() &&
