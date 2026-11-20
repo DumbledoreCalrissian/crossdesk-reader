@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/images/crossdesk-logo.svg" alt="CrossDesk Reader logo" width="128" height="128"></p>
+
 # CrossDesk Reader
 
 CrossDesk Reader is firmware for the BOOX Picco, based on
