@@ -79,9 +79,9 @@ upstream CrossPoint. Support for other boards is kept.
 Keep the firmware and simulator repositories side by side:
 
 ```sh
-git clone --recurse-submodules -b picco https://github.com/DumbledoreCalrissian/crosspoint-reader.git
+git clone --recurse-submodules -b picco https://github.com/DumbledoreCalrissian/crossdesk-reader.git
 git clone -b main https://github.com/DumbledoreCalrissian/crosspoint-simulator.git
-cd crosspoint-reader
+cd crossdesk-reader
 pio run -e simulator_picco
 pio run -e simulator_picco -t run_simulator
 ```

@@ -33,7 +33,7 @@ constexpr Row ROWS[SudokuSettingsActivity::ITEM_COUNT] = {
     {StrId::STR_SUDOKU_REVEAL_BUTTON, &CrossPointSettings::sudokuRevealButton},
 };
 constexpr const char* BANK_URL =
-    "https://github.com/DumbledoreCalrissian/crosspoint-reader/releases/download/sudoku-bank-v2/";
+    "https://github.com/DumbledoreCalrissian/crossdesk-reader/releases/download/sudoku-bank-v2/";
 }  // namespace
 
 void SudokuSettingsActivity::onEnter() {

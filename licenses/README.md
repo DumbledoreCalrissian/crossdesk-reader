@@ -21,7 +21,7 @@ Keep these sources and this license file available with the firmware downloads.
 
 To build the same source revision:
 
-1. Clone the fork with `git clone --recursive https://github.com/DumbledoreCalrissian/crosspoint-reader.git`.
+1. Clone the fork with `git clone --recursive https://github.com/DumbledoreCalrissian/crossdesk-reader.git`.
 2. Select the release tag with `git checkout <release-tag>`.
 3. Download the matching SDK with `git submodule update --init --recursive`.
 4. Follow [the fork setup guide](../docs/contributing/getting-started.md) for the build tools.

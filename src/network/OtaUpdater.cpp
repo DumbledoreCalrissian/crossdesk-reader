@@ -21,7 +21,7 @@
 namespace {
 // CrossDesk fork: check this fork's releases, never upstream builds.
 constexpr char latestReleaseUrl[] =
-    "https://api.github.com/repos/DumbledoreCalrissian/crosspoint-reader/releases/latest";
+    "https://api.github.com/repos/DumbledoreCalrissian/crossdesk-reader/releases/latest";
 
 // Fork release tags are "crossdesk-v<version>" so they never clash with
 // upstream's plain version tags; assets and comparisons use the bare version.

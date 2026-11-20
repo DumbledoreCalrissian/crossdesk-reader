@@ -14,7 +14,7 @@ difficulty or **Download all packs**. Select Wi-Fi when prompted. Downloads
 check their size and SHA256 before replacing an installed pack.
 
 For manual installation, copy the `.cpsd` files from this fork's
-[sudoku-bank-v2 release](https://github.com/DumbledoreCalrissian/crosspoint-reader/releases/tag/sudoku-bank-v2)
+[sudoku-bank-v2 release](https://github.com/DumbledoreCalrissian/crossdesk-reader/releases/tag/sudoku-bank-v2)
 to `/games/sudoku/` on the card. The files are `easy.cpsd`, `medium.cpsd`,
 `hard.cpsd` and `diabolical.cpsd`. Install only the difficulties you want.
 In the default simulator card, use `fs_/games/sudoku/`.

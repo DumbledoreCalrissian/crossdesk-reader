@@ -22,9 +22,9 @@ cd picco-workspace
 Keep the repositories side by side:
 
 ```sh
-git clone --recurse-submodules -b picco https://github.com/DumbledoreCalrissian/crosspoint-reader.git
+git clone --recurse-submodules -b picco https://github.com/DumbledoreCalrissian/crossdesk-reader.git
 git clone -b fix/picco-test-link https://github.com/DumbledoreCalrissian/crosspoint-simulator.git
-cd crosspoint-reader
+cd crossdesk-reader
 ```
 
 If cloned without submodules, run `git submodule update --init --recursive`.

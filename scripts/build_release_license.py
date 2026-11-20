@@ -183,7 +183,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--repository",
-        default=os.environ.get("GITHUB_REPOSITORY", "DumbledoreCalrissian/crosspoint-reader"),
+        default=os.environ.get("GITHUB_REPOSITORY", "DumbledoreCalrissian/crossdesk-reader"),
     )
     args = parser.parse_args()
     text = build_license(args.env, args.repository, args.packages_dir)
