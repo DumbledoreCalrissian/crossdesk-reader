@@ -1,42 +1,58 @@
-# Picco custom firmware
+# CrossDesk Reader
 
-A personal BOOX Picco build based on
+CrossDesk Reader is firmware for the BOOX Picco, based on
 [CrossPoint Reader](https://github.com/crosspoint-reader/crosspoint-reader).
-This is an unofficial fork, not supported by the original project or BOOX.
+It is an unofficial fork, not supported by the CrossPoint project or BOOX.
 
-**Experimental: runs on a physical BOOX Picco; testing is ongoing.**
+All features in this build work and have been tested on a BOOX Picco.
+The fork follows upstream CrossPoint closely, so treat it like a development
+branch: new upstream changes arrive often, and bugs can still appear.
 
-## Features
+## Desk
 
-EPUB reading, Library, custom fonts, bookmarks, dictionary lookup and clippings,
-plus:
+Desk is the Home screen theme that gives CrossDesk Reader its name.
+It shows the current book's cover large, with its title, progress,
+reading time and pages turned, and the other recent books as a swipeable strip
+of small covers with their titles and progress bars. Its other apps (Browse
+Files, Library, Settings, Todo, Pomodoro, Sudoku, Statistics, Weather and any
+Plugins or OPDS shortcut) open from **Apps** at the top right of Home.
+
+Desk also shows:
+
+- A Todo preview. Tap it to open Todo; its bullets do not complete tasks.
+- A [reading calendar](docs/reading-calendar.md) with monthly minutes, a streak
+  of days meeting your daily reading goal and the goal itself. Tap the day grid
+  to open **Statistics**, or tap the totals/goal footer to change the goal in
+  Settings.
+- A [weather widget](docs/weather.md) with a manually refreshed three-day
+  forecast, humidity and precipitation for a city you choose. Tap it to open
+  Weather.
+
+When there is no data, each widget says why instead of disappearing.
+Desk needs PSRAM, which the Picco has. You can choose another theme in Settings.
+
+## Other features added by this fork
 
 - [Todo](docs/picco-todo.md): an offline task list.
 - [Pomodoro](docs/picco-pomodoro.md): a foreground focus/break timer.
 - [Sudoku](docs/picco-sudoku.md): notes, undo, hints, saved games and puzzle-pack downloads.
+- [Reading statistics](docs/picco-reading-stats.md): Book statistics in the EPUB
+  reader menu (progress, reading time, forward page turns, and a confirmed reset
+  that keeps position and bookmarks). Library shows each opened EPUB's saved
+  percentage. Home shows the current EPUB's progress and reading time in every
+  theme.
+- Monthly **Statistics**: a read-only page with one month of the reading
+  calendar. It opens from Desk and from the other themes' Home menus (the chart
+  icon in Cover Grid).
 - File Transfer from the Browse Files root header.
-- `My Clippings.txt` hidden from Library and Home, while remaining accessible in Browse Files.
+- `My Clippings.txt` is hidden from Library and Home, but stays in Browse Files.
 
-The EPUB reader menu includes Book statistics: current progress, reading time,
-forward page turns and a confirmed reset that keeps position and bookmarks.
-Library shows each opened EPUB's saved percentage. Home shows the current EPUB's
-progress and reading time in every theme; Lyra Extended shows it on each recent
-cover, and Cover Grid thumbnails show each book's percentage and bar.
+## From CrossPoint Reader
 
-The Desk theme shows the current book's cover large, with its title, progress,
-reading time and pages turned, and the other recent books as a swipeable strip
-of small covers with their titles and progress bars. Its other apps (Browse
-Files, Library, Settings, Todo, Pomodoro, Sudoku, Statistics, Weather and any Plugins or OPDS
-shortcut) open from **Apps** at the top right of Home. Tapping the Todo preview
-opens Todo; its bullets do not complete tasks.
-Its [reading calendar](docs/reading-calendar.md) shows monthly minutes, a streak
-of days meeting your daily reading goal and the goal itself. Tap the day grid
-to open read-only monthly **Statistics**, or tap the totals/goal footer to change
-the goal in Settings. Statistics also opens from Desk **Apps** and the other
-themes’ Home menus (the chart icon in Cover Grid).
-Its [weather widget and screen](docs/weather.md) show a manually refreshed
-three-day forecast, humidity and precipitation for a city you choose; tap the widget
-to open Weather. When there is no data, each widget says why instead of disappearing.
+EPUB reading, Library, the Classic, Lyra, Lyra Extended, RoundedRaff and Cover
+Grid themes, custom and SD-card fonts, bookmarks, dictionary lookup, clippings,
+web file transfer, OPDS, plugins and the other reader features come from
+upstream CrossPoint. Support for other boards is kept.
 
 ## Try the simulator
 
