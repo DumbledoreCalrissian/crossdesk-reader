@@ -19,6 +19,11 @@ of small covers with their titles and progress bars. Its other apps (Browse
 Files, Library, Settings, Todo, Pomodoro, Sudoku, Statistics, Weather and any
 Plugins or OPDS shortcut) open from **Apps** at the top right of Home.
 
+<p align="center">
+  <img src="docs/images/screenshots/desk-home.png" alt="Desk Home with the current book, recent books, Todo, reading calendar and weather" width="240">
+  <img src="docs/images/screenshots/desk-apps.png" alt="Desk Home with the Apps menu open" width="240">
+</p>
+
 Desk also shows:
 
 - A Todo preview. Tap it to open Todo; its bullets do not complete tasks.
@@ -32,6 +37,13 @@ Desk also shows:
 
 When there is no data, each widget says why instead of disappearing.
 Desk needs PSRAM, which the Picco has. You can choose another theme in Settings.
+
+The calendar opens monthly Statistics, and the weather widget opens Weather:
+
+<p align="center">
+  <img src="docs/images/screenshots/statistics.png" alt="Monthly reading Statistics page" width="240">
+  <img src="docs/images/screenshots/weather.png" alt="Weather page with a three-day forecast" width="240">
+</p>
 
 ## Other features added by this fork
 
@@ -48,6 +60,12 @@ Desk needs PSRAM, which the Picco has. You can choose another theme in Settings.
   icon in Cover Grid).
 - File Transfer from the Browse Files root header.
 - `My Clippings.txt` is hidden from Library and Home, but stays in Browse Files.
+
+<p align="center">
+  <img src="docs/images/screenshots/todo.png" alt="Todo list" width="200">
+  <img src="docs/images/screenshots/pomodoro.png" alt="Pomodoro timer" width="200">
+  <img src="docs/images/screenshots/sudoku-game.png" alt="Sudoku game with notes, undo, check and reveal" width="200">
+</p>
 
 ## From CrossPoint Reader
 
