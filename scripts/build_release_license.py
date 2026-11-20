@@ -54,6 +54,17 @@ def source_reference(directory: Path) -> str:
     raise ValueError(f"Missing source package metadata: {directory}")
 
 
+def sdk_repository_url() -> str:
+    """Return the SDK repository from .gitmodules as an https URL."""
+    url = git("config", "-f", ".gitmodules", "--get", "submodule.freeink-sdk.url")
+    if url.startswith("git@github.com:"):
+        url = "https://github.com/" + url[len("git@github.com:"):]
+    url = url.removesuffix(".git")
+    if not url.startswith("https://"):
+        raise ValueError(f"Cannot turn the SDK submodule URL into a web link: {url}")
+    return url
+
+
 def build_license(environment: str, repository: str, packages_dir: Path) -> str:
     revision = git("rev-parse", "HEAD")
     sdk_revision = git("rev-parse", "HEAD:freeink-sdk")
@@ -61,7 +72,7 @@ def build_license(environment: str, repository: str, packages_dir: Path) -> str:
         raise ValueError("The SDK checkout differs from the recorded source revision.")
     source_url = f"https://github.com/{repository}"
     text = (
-        "CrossPoint Reader firmware licenses\n\n"
+        "CrossDesk Reader firmware licenses (based on CrossPoint Reader)\n\n"
         "Original CrossPoint code uses MIT, except where a file states other terms.\n"
         "Third-party code and assets keep their own licenses.\n"
         "The combined firmware executable uses GPLv3 because it includes wolfSSL.\n\n"
@@ -69,7 +80,7 @@ def build_license(environment: str, repository: str, packages_dir: Path) -> str:
         f"Notice collection environment: {environment}\n"
         f"Source archive: {source_url}/archive/{revision}.tar.gz\n"
         f"Source and patches: {source_url}/tree/{revision}\n"
-        f"SDK source: https://github.com/Free-Ink/freeink-sdk/tree/{sdk_revision}\n"
+        f"SDK source: {sdk_repository_url()}/tree/{sdk_revision}\n"
         f"Build instructions: {source_url}/blob/{revision}/licenses/README.md\n\n"
         "GitHub's source archive omits SDK contents and downloaded libraries.\n"
         "Use the SDK revision and library source packages listed in this file.\n"
@@ -172,7 +183,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--repository",
-        default=os.environ.get("GITHUB_REPOSITORY", "crosspoint-reader/crosspoint-reader"),
+        default=os.environ.get("GITHUB_REPOSITORY", "DumbledoreCalrissian/crosspoint-reader"),
     )
     args = parser.parse_args()
     text = build_license(args.env, args.repository, args.packages_dir)

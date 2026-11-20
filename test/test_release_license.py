@@ -46,6 +46,16 @@ class SourceReferenceTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "SDK checkout differs"):
                 release_license.build_license("default", "owner/reader", Path("packages"))
 
+    def test_sdk_link_uses_the_submodule_repository(self):
+        for url in ("https://github.com/owner/sdk.git", "git@github.com:owner/sdk.git"):
+            with patch.object(release_license, "git", return_value=url):
+                self.assertEqual(release_license.sdk_repository_url(), "https://github.com/owner/sdk")
+
+    def test_unknown_sdk_url_form_is_rejected(self):
+        with patch.object(release_license, "git", return_value="ssh://git@github.com/owner/sdk.git"):
+            with self.assertRaisesRegex(ValueError, "SDK submodule URL"):
+                release_license.sdk_repository_url()
+
 
 if __name__ == "__main__":
     unittest.main()

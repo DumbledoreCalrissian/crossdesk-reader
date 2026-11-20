@@ -1,6 +1,6 @@
 # Firmware licenses
 
-This independent Picco fork retains CrossPoint's original MIT notice in the root `LICENSE` file.
+CrossDesk Reader, an independent Picco fork of CrossPoint Reader, retains CrossPoint's original MIT notice in the root `LICENSE` file.
 Source project credits are in [README.md](../README.md#credits-and-licences).
 Third-party code and assets keep their own licenses.
 The combined firmware executable uses GPLv3 because it includes wolfSSL.
@@ -13,7 +13,7 @@ These notices do not change the original licenses or grant extra permissions.
 
 Corresponding Source means the source and scripts needed to rebuild the firmware.
 GitHub provides a source archive for each release tag.
-That archive contains CrossPoint's code and patches, but it omits submodule contents and downloaded libraries.
+That archive contains this fork's code and patches, but it omits submodule contents and downloaded libraries.
 
 The release `LICENSE` identifies the source revision and the SDK revision.
 It also lists the source packages for the libraries that PlatformIO downloads.
@@ -29,7 +29,7 @@ To build the same source revision:
 
 `platformio.ini` selects the platform, dependency versions, build flags, and patch scripts.
 The source packages listed in the release file include third-party code that the GitHub source archive omits.
-The `scripts/` directory contains CrossPoint's changes to those dependencies.
+The `scripts/` directory contains this fork's and CrossPoint's changes to those dependencies.
 
 ## Third-party material
 
