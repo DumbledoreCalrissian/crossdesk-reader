@@ -36,10 +36,6 @@ class HalClock {
   // Calendar attribution requires a fresh RTC sample and must not reuse stale time after a read failure.
   bool localTimeFresh(struct tm& out) const;
 
-  // Get current local hour (0-23) and minute (0-59).
-  // Returns false if RTC is not available.
-  bool getTime(uint8_t& hour, uint8_t& minute) const;
-
   // Format the local time into a caller-provided buffer.
   // 24h mode produces "HH:MM" (needs >=6 bytes); 12h mode produces "H:MM AM"/"HH:MM PM" (needs >=9 bytes).
   // Returns false if RTC is not available.
