@@ -95,12 +95,12 @@ upload; recovery has not been tested.
 
 ## Releases
 
-Releases are tagged with the plain version number, for example `0.1.0`
-(no `v`). Each release has one file per board, named
-`crosspoint-<version>-<board>.bin`, for example `crosspoint-0.1.0-picco.bin`.
-Keep this naming: the firmware's update check only finds files with these
-names. The Picco cannot update itself, so install its file with a USB
-upload as described above.
+Releases are tagged `crossdesk-v<version>`, for example `crossdesk-v0.1.0`,
+so they never clash with upstream CrossPoint's version tags. Each release has
+one file per board, named `crosspoint-<version>-<board>.bin`, for example
+`crosspoint-0.1.0-picco.bin`. Keep this naming: the firmware's update check
+only finds files with these names. The Picco cannot update itself, so install
+its file with a USB upload as described above.
 
 ## Help
 

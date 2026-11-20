@@ -22,6 +22,14 @@ namespace {
 // CrossDesk fork: check this fork's releases, never upstream builds.
 constexpr char latestReleaseUrl[] =
     "https://api.github.com/repos/DumbledoreCalrissian/crosspoint-reader/releases/latest";
+
+// Fork release tags are "crossdesk-v<version>" so they never clash with
+// upstream's plain version tags; assets and comparisons use the bare version.
+// .github/workflows/release.yml strips the same prefix.
+const char* versionFromTag(const char* tag) {
+  constexpr char prefix[] = "crossdesk-v";
+  return strncmp(tag, prefix, sizeof(prefix) - 1) == 0 ? tag + sizeof(prefix) - 1 : tag;
+}
 }  // namespace
 
 OtaUpdater::OtaUpdaterError OtaUpdater::checkForUpdate() {
@@ -56,7 +64,8 @@ OtaUpdater::OtaUpdaterError OtaUpdater::checkForUpdate() {
       releaseParser.feed(reinterpret_cast<const char*>(data + offset), 1);
       offset++;
       if (releaseParser.foundTag()) {
-        snprintf(assetName, sizeof(assetName), "crosspoint-%s%s.bin", releaseParser.getTagName(), assetSuffix);
+        snprintf(assetName, sizeof(assetName), "crosspoint-%s%s.bin", versionFromTag(releaseParser.getTagName()),
+                 assetSuffix);
         releaseParser.setFirmwareAssetName(assetName);
         assetNameSet = true;
       }
@@ -82,7 +91,7 @@ OtaUpdater::OtaUpdaterError OtaUpdater::checkForUpdate() {
     return NO_UPDATE;
   }
 
-  latestVersion = releaseParser.getTagName();
+  latestVersion = versionFromTag(releaseParser.getTagName());
   otaUrl = releaseParser.getFirmwareUrl();
   otaSize = releaseParser.getFirmwareSize();
   totalSize = otaSize;

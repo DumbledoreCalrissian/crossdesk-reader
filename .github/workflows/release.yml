@@ -1,7 +1,8 @@
 name: Compile Release
 
 # Build and attach firmware only after a release is published. The release tag
-# supplies both the source revision and the version in each asset name.
+# (crossdesk-v<version>) supplies the source revision and, without its prefix,
+# the version in each asset name; OtaUpdater.cpp strips the same prefix.
 
 on:
   release:
@@ -51,7 +52,7 @@ jobs:
         env:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
-          version="${RELEASE_TAG#v}"
+          version="${RELEASE_TAG#crossdesk-v}"; version="${version#v}"
           configured_version="$(sed -n 's/^version = //p' platformio.ini | head -n1)"
           if [ "${{ github.event.release.prerelease }}" = "true" ]; then
             test "$version" = "${configured_version}rc"
@@ -112,7 +113,7 @@ jobs:
           PIO_ENV: ${{ github.event.release.prerelease && matrix.rc_env || matrix.release_env }}
           RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
-          version="${RELEASE_TAG#v}"
+          version="${RELEASE_TAG#crossdesk-v}"; version="${version#v}"
           asset="crosspoint-${version}-${{ matrix.device }}.bin"
           cp ".pio/build/${PIO_ENV}/firmware.bin" "$asset"
           echo "name=$asset" >> "$GITHUB_OUTPUT"
@@ -165,7 +166,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
-          version="${RELEASE_TAG#v}"
+          version="${RELEASE_TAG#crossdesk-v}"; version="${version#v}"
           for device in x3-x4 sticky x4pro x4c papermono metalio_eink4 eego_a4 picco; do
             test -f "dist/crosspoint-${version}-${device}.bin"
           done
