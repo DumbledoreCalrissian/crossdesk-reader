@@ -93,6 +93,15 @@ virtual card directory. Build native Picco firmware with `pio run -e picco`.
 bootloader and recovery partition. Back up the full flash before your first
 upload; recovery has not been tested.
 
+## Releases
+
+Releases are tagged with the plain version number, for example `0.1.0`
+(no `v`). Each release has one file per board, named
+`crosspoint-<version>-<board>.bin`, for example `crosspoint-0.1.0-picco.bin`.
+Keep this naming: the firmware's update check only finds files with these
+names. The Picco cannot update itself, so install its file with a USB
+upload as described above.
+
 ## Help
 
 - [Reader user guide](USER_GUIDE.md)
