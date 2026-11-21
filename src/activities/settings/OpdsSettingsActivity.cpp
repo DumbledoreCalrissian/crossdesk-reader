@@ -149,7 +149,7 @@ void OpdsSettingsActivity::handleSelection() {
       }
     };
     startActivityForResult(
-        makeTextEntry(renderer, mappedInput, tr(STR_PASSWORD), editServer.password, 63, InputType::Text), handler);
+        makeTextEntry(renderer, mappedInput, tr(STR_PASSWORD), editServer.password, 63, InputType::Password), handler);
   } else if (nav.selected == CUSTOM_HEADER_1_INDEX || nav.selected == CUSTOM_HEADER_2_INDEX) {
     // Custom Header 1 or 2 - single "Name: Value" line, parsed on save.
     const size_t slot = static_cast<size_t>(nav.selected == CUSTOM_HEADER_1_INDEX ? 0 : 1);

@@ -350,7 +350,7 @@ void WifiSelectionActivity::promptPasswordEntry() {
   startActivityForResult(makeTextEntry(renderer, mappedInput, tr(STR_ENTER_WIFI_PASSWORD),
                                        "",  // No initial text
                                        64,  // Max password length
-                                       InputType::Text),
+                                       InputType::Password),
                          [this](const ActivityResult& result) {
                            if (result.isCancelled) {
                              state = WifiSelectionState::NETWORK_LIST;
