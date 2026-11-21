@@ -197,6 +197,8 @@ void UiListActivity::loop() {
 void UiListActivity::scrollButtons() {
   const auto scroll = [this](const int pages) {
     auto& n = activeNav();
+    // A list that fits has nothing to scroll; skip the e-ink refresh.
+    if (n.top == 0 && n.inputPageRows() >= listCount()) return;
     n.requestScroll(pages * n.inputPageRows());
     requestUpdate();
   };
