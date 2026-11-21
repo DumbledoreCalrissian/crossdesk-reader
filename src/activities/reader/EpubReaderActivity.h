@@ -193,7 +193,8 @@ class EpubReaderActivity final : public ReaderActivity {
   // Toolbar reader menu (see Overlay above).
   bool usesToolbarMenu() const;
   void openOverlay(Overlay target);
-  void closeOverlayToPage();
+  // showPage=false leaves the redraw to a page turn that follows.
+  void closeOverlayToPage(bool showPage = true);
   void discardOverlayPage();
   void handleOverlayInput();
   void renderOverlay();

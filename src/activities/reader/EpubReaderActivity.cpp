@@ -2880,12 +2880,18 @@ void EpubReaderActivity::openOverlay(Overlay target) {
 }
 
 // Grayscale panels re-render to restore AA; other boards restore the B/W snapshot.
-void EpubReaderActivity::closeOverlayToPage() {
+void EpubReaderActivity::closeOverlayToPage(const bool showPage) {
   mappedInput.resetHomeButtonInput();
   overlay = Overlay::None;
   overlayPopup.dismiss();  // an option picker cannot outlive its panel
   toolbarUi.reset();       // ~1 KB of interaction table + props, only needed while open
   if (BoardConfig::isEegoA4()) pagesUntilFullRefresh = 1;
+  if (!showPage) {
+    RenderLock lock;
+    settleOverlayRefresh();  // a deferred chrome refresh may still be running
+    discardOverlayPage();
+    return;
+  }
   if (!xteinkClassPanel() && overlayPageStored) {
     RenderLock lock;  // the render task shares the framebuffer
     settleOverlayRefresh();
@@ -3071,10 +3077,12 @@ void EpubReaderActivity::handleOverlayInput() {
       openOverlay(toolOverlay(focusedTool));
       return;
     }
-    const bool prev = mappedInput.wasReleased(MappedInputManager::Button::Up);
-    const bool next = mappedInput.wasReleased(MappedInputManager::Button::Down);
-    if (prev || next) {
-      gotoSpine(currentSpineIndex + (next ? 1 : -1));
+    // Page keys do what they do on the page: close the toolbar and turn.
+    const bool prev = mappedInput.wasReleased(MappedInputManager::Button::PageBack);
+    const bool next = mappedInput.wasReleased(MappedInputManager::Button::PageForward);
+    if ((prev || next) && section) {
+      closeOverlayToPage(/*showPage=*/false);
+      pendingManualTurn = next ? 1 : -1;
     }
     return;
   }
