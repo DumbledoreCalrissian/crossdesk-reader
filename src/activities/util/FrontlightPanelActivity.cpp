@@ -276,6 +276,10 @@ void FrontlightPanelActivity::loop() {
                                        [this] { adjustBrightness(-BRIGHTNESS_STEP); });
   buttonNavigator.onPressAndContinuous({MappedInputManager::Button::Right},
                                        [this] { adjustBrightness(BRIGHTNESS_STEP); });
+  // The side keys (the Picco's only keys) change the value too: Up is brighter.
+  buttonNavigator.onPressAndContinuous({MappedInputManager::Button::Up}, [this] { adjustBrightness(BRIGHTNESS_STEP); });
+  buttonNavigator.onPressAndContinuous({MappedInputManager::Button::Down},
+                                       [this] { adjustBrightness(-BRIGHTNESS_STEP); });
 }
 
 int FrontlightPanelActivity::computePanelBottom() const {
