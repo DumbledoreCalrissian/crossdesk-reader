@@ -459,9 +459,20 @@ void HomeActivity::loop() {
     return;
   }
 
+  // Without a Confirm key a Desk selection could never be opened: Up/Down page
+  // the recent strip instead, and vertical swipes do nothing.
+  const bool deskPaging = deskUi && !mappedInput.hasConfirmButton();
+  if (deskPaging) {
+    const auto page = [this](const bool next) {
+      if (deskUi->pageStrip(next, selectorIndex)) requestUpdate();
+    };
+    buttonNavigator.onNext([&page] { page(true); });
+    buttonNavigator.onPrevious([&page] { page(false); });
+  }
+
   // Cover grid home splits navigation by button group (see below); the flat
   // next/previous cycle is for the classic list home only.
-  if (!coverGridUi) {
+  if (!coverGridUi && !deskPaging) {
     buttonNavigator.onNext([this, menuCount] {
       selectorIndex = ButtonNavigator::nextIndex(selectorIndex, menuCount);
       requestUpdate();
@@ -474,6 +485,7 @@ void HomeActivity::loop() {
   }
 
   const auto swipe = mappedInput.wasSwipe();
+  if (deskPaging && (swipe == MappedInputManager::SwipeDir::Up || swipe == MappedInputManager::SwipeDir::Down)) return;
   if (swipe == MappedInputManager::SwipeDir::Up) {
     selectorIndex = ButtonNavigator::nextIndex(selectorIndex, menuCount);
     if (deskUi) deskUi->follow(selectorIndex);
@@ -573,7 +585,7 @@ void HomeActivity::loop() {
     const auto buttonTouch = deskUi->buttonTouch();
     const int touchedIndex = bookTouch != MappedInputManager::RowTouch::None ? touchedBook : menuIndex;
     const auto touch = bookTouch != MappedInputManager::RowTouch::None ? bookTouch : buttonTouch;
-    if (touch == MappedInputManager::RowTouch::Down && selectorIndex != touchedIndex) {
+    if (touch == MappedInputManager::RowTouch::Down && selectorIndex != touchedIndex && !deskPaging) {
       selectorIndex = touchedIndex;
       requestUpdate();
     } else if (touch == MappedInputManager::RowTouch::Tap) {
@@ -693,8 +705,9 @@ void HomeActivity::render(RenderLock&&) {
     renderer.clearScreen();
     GUI.drawHeader(renderer, Rect{0, metrics.topPadding, pageWidth, metrics.homeTopPadding - metrics.topPadding},
                    nullptr, nullptr, false);
-    deskUi->drawBooks(selectorIndex);
-    deskUi->draw(selectorIndex == static_cast<int>(recentBooks.size()), !recentBooks.empty());
+    const int shown = mappedInput.hasConfirmButton() ? selectorIndex : -1;
+    deskUi->drawBooks(shown);
+    deskUi->draw(shown == static_cast<int>(recentBooks.size()), !recentBooks.empty());
     const auto labels =
         mappedInput.mapLabels(deskUi->backHint(!recentBooks.empty()), tr(STR_SELECT), tr(STR_DIR_UP), tr(STR_DIR_DOWN));
     GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);

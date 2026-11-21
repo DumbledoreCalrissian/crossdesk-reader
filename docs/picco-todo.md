@@ -4,8 +4,8 @@ Open **Todo** on Home (in the Desk theme, from the menu button on Home), then **
 
 Desk Home also shows the first three unfinished tasks beside the current book.
 Tap anywhere in that widget to open Todo. It is hidden when there are no open
-tasks or the saved tasks cannot be read. Buttons continue to select books and
-the menu button.
+tasks or the saved tasks cannot be read. On Picco, Up/Down page the recent-book
+strip; with a Confirm key they select books and the menu button.
 
 - Tap a checkbox to complete or reopen a task.
 - Tap its description to edit it. Long descriptions wrap or truncate in the list;

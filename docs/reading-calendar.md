@@ -4,8 +4,9 @@ The Desk Home theme shows a monthly reading calendar, total minutes read this
 month, a streak of days meeting your reading goal and the current goal. The widget
 updates when you enter Home. Tapping the totals or goal line opens **Settings → Reader** with
 **Daily reading goal** selected;
-tap the day grid to open **Statistics** for the current month. Buttons on Home
-continue to select books and the app menu.
+tap the day grid to open **Statistics** for the current month. On Picco, Up/Down on
+Home page the recent-book strip; with a Confirm key they select books and the
+app menu.
 
 Choose **Settings → Reader → Daily reading goal**. The default is 30 minutes;
 choices are 5, 10, 15, 20, 30, 45 and 60 minutes. Reading in short bursts adds up
