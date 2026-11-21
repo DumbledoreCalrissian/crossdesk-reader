@@ -187,7 +187,21 @@ void UiListActivity::loop() {
     return;
   }
 
+  if (!mappedInput.hasConfirmButton()) {
+    scrollButtons();
+    return;
+  }
   navigateButtons();
+}
+
+void UiListActivity::scrollButtons() {
+  const auto scroll = [this](const int pages) {
+    auto& n = activeNav();
+    n.requestScroll(pages * n.inputPageRows());
+    requestUpdate();
+  };
+  buttonNavigator.onNext([&scroll] { scroll(1); });
+  buttonNavigator.onPrevious([&scroll] { scroll(-1); });
 }
 
 void UiListActivity::navigateButtons() {
@@ -233,6 +247,7 @@ void UiListActivity::syncListViewport(UiScreen& screen, fui::ListProps& props, c
       props.topIndex = static_cast<uint16_t>(prevTop);
     }
   }
+  if (!markSelection && !mappedInput.hasConfirmButton()) props.selectedIndex = -1;
 }
 
 void UiListActivity::drawChrome() {

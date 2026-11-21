@@ -256,6 +256,14 @@ constexpr unsigned long TOUCH_HELD_OVERRIDE_WINDOW_MS = 250;
 
 bool MappedInputManager::hasTouch() const { return gpio.hasTouch(); }
 
+bool MappedInputManager::hasConfirmButton() const {
+  // Board check, not the profile's confirm pin: the simulator's board
+  // stand-in has no pins, and other boards keep their behavior.
+  if (!BoardConfig::isPicco()) return true;
+  return SETTINGS.shortPwrBtn == CrossPointSettings::PWR_CONFIRM ||
+         SETTINGS.doublePwrBtn == CrossPointSettings::PWR_CONFIRM;
+}
+
 void MappedInputManager::rememberTouchHeldTime() const {
   touchHeldOverrideValid = true;
   touchHeldOverrideMs = gpio.lastTouchHeldMs();

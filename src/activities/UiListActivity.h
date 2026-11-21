@@ -29,6 +29,9 @@ class UiListActivity : public Activity, protected UiAppHost {
   static constexpr freeink::ui::ActionId ACTION_ROW = 1;
   static constexpr freeink::ui::ActionId ACTION_SWIPE_DELETE = 2;
   static constexpr freeink::ui::ActionId ACTION_USER = 3;
+  // Keeps a row highlighted that a caller asked to point out, even where
+  // buttons cannot select (see scrollButtons()).
+  bool markSelection = false;
 
   UiListActivity(const char* name, GfxRenderer& renderer, MappedInputManager& mappedInput,
                  bool wantsTouchLongPress = false);
@@ -62,6 +65,8 @@ class UiListActivity : public Activity, protected UiAppHost {
   // The button-navigation tail of loop(): press steps the selection, hold
   // jumps by page. UiTabListActivity replaces it with the ring walk.
   virtual void navigateButtons();
+  // Without a Confirm key the selection is useless: Up/Down scroll by page.
+  void scrollButtons();
   // First hook in loop(); return true when the pass is consumed (popups, extra
   // buttons, gestures). Runs before the base button handling.
   virtual bool handleCustomInput() { return false; }

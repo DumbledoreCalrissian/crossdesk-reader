@@ -88,6 +88,9 @@ class MappedInputManager {
   bool consumeSuppressedRelease() const;
   bool isPressed(Button button) const;
   bool hasTouch() const;
+  // False on the Picco, whose only keys are Power and the Up/Down rocker,
+  // unless a Power click is mapped to Confirm.
+  bool hasConfirmButton() const;
   bool wasScreenTapped(int& x, int& y) const;
   // Immediate press edge for drag handles, without the row-selection dwell.
   bool wasScreenTouchPressed(int& x, int& y) const;

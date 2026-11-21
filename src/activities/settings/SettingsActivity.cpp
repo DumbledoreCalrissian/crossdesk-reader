@@ -233,6 +233,7 @@ void SettingsActivity::onEnter() {
     for (size_t i = 0; i < settings.size(); ++i) {
       if (focus.value ? settings[i].valuePtr == focus.value : settings[i].action == focus.action) {
         nav.selected = static_cast<int>(i);
+        markSelection = true;
         break;
       }
     }

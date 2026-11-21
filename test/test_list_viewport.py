@@ -21,8 +21,14 @@ struct UiScreen {
     nav.syncToProps({0, 0, 200, height}, 20, 0, count, props, offset);
   }
 };
+struct MappedInput {
+  bool confirm = true;
+  bool hasConfirmButton() const { return confirm; }
+};
 struct UiListActivity {
   fui::ListNav nav;
+  MappedInput mappedInput;
+  bool markSelection = false;
   int count = 16;
   fui::ListNav& activeNav() { return nav; }
   int listCount() const { return count; }
@@ -56,6 +62,16 @@ int main() {
     nav.requestSelection(3 + offset);
     activity.syncListViewport(screen, props, offset);
     assert(nav.top == 2 && props.topIndex == 2);
+
+    // Without a Confirm key only a pointed-out row stays highlighted.
+    const int16_t shown = props.selectedIndex;
+    assert(shown >= 0);
+    activity.mappedInput.confirm = false;
+    activity.syncListViewport(screen, props, offset);
+    assert(props.selectedIndex == -1 && nav.selected == 3 + offset);
+    activity.markSelection = true;
+    activity.syncListViewport(screen, props, offset);
+    assert(props.selectedIndex == shown);
   }
 }
 """

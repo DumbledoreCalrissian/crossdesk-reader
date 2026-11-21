@@ -129,7 +129,8 @@ bool CatalogActivity::handleCustomInput() {
   // Previous on a searchable list's top row opens search on release. Lists
   // move on press, so latch that press instead of stepping; holding still
   // pages (navigateButtons() drops the latch when the selection moves).
-  if (mappedInput.wasPressed(MappedInputManager::Button::NavPrevious)) {
+  // Without a Confirm key Up only scrolls, so it never opens search.
+  if (mappedInput.hasConfirmButton() && mappedInput.wasPressed(MappedInputManager::Button::NavPrevious)) {
     searchPending = state == State::BROWSING && hasSearch() && nav.selected == 0;
     return searchPending;
   }
