@@ -406,6 +406,12 @@ void ActivityManager::goHome(HomeMenuItem initialMenuItem, bool cleanInitialRefr
 void ActivityManager::goToCrashReport() { replaceActivity(std::make_unique<CrashActivity>(renderer, mappedInput)); }
 
 void ActivityManager::pushActivity(std::unique_ptr<Activity>&& activity) {
+  // A failed nothrow allocation must not leave a Push with nothing to push:
+  // loop() would never clear pendingAction.
+  if (!activity) {
+    LOG_ERR("ACT", "pushActivity: null activity ignored");
+    return;
+  }
   mappedInput.resetHomeButtonInput();
   if (pendingActivity) {
     // Should never happen in practice
