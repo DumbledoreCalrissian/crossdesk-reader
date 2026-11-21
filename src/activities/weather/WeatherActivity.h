@@ -47,5 +47,7 @@ class WeatherActivity final : public Activity, private UiAppHost {
   void stopNetwork();
   void updateText();
   void moveSelection(int delta);
+  // -1 where no Confirm key could act on a button selection.
+  int shownSelection() const;
   void drawForecast();
 };

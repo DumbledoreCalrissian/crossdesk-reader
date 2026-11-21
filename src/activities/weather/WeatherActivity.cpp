@@ -344,9 +344,11 @@ void WeatherActivity::loop() {
     }
     return;
   }
+  if (!mappedInput.hasConfirmButton()) return;
   ButtonNavigator::onNextPress([this] { moveSelection(1); });
   ButtonNavigator::onPreviousPress([this] { moveSelection(-1); });
 }
+int WeatherActivity::shownSelection() const { return mappedInput.hasConfirmButton() ? selection : -1; }
 void WeatherActivity::render(RenderLock&&) {
   renderer.clearScreen();
   renderUi();
@@ -445,7 +447,7 @@ void WeatherActivity::buildScreen(UiScreen& screen) {
       header.trailingStyles.normal.border = fui::Paint::solid(fui::Color::Black);
       header.trailingStyles.normal.borderWidth = 1;
       header.trailingRadius = screen.theme().listRowRadius;  // match the Change/Units buttons
-      if (selection == 0) header.trailingStyles.normal.background = fui::Paint::dither(fui::Color::LightGray);
+      if (shownSelection() == 0) header.trailingStyles.normal.background = fui::Paint::dither(fui::Color::LightGray);
     }
     fui::header(screen.frame(), band, header);
   }
@@ -454,7 +456,7 @@ void WeatherActivity::buildScreen(UiScreen& screen) {
     fui::ListProps props;
     props.items = rows;
     props.count = placeCount;
-    props.selectedIndex = selection;
+    props.selectedIndex = static_cast<int16_t>(shownSelection());
     props.action = Pick;
     props.labelText = screen.theme().bodyText;
     props.labelText.maxLines = 2;
@@ -515,13 +517,13 @@ void WeatherActivity::buildScreen(UiScreen& screen) {
     button.label = tr(STR_WEATHER_CHANGE);
     button.action = Location;
     button.enabled = editable;
-    button.state = selection == 1 ? fui::StateSelected : fui::StateNormal;
+    button.state = shownSelection() == 1 ? fui::StateSelected : fui::StateNormal;
     const int half = (w - m.verticalSpacing) / 2;
     screen.button(button, fui::Rect{static_cast<int16_t>(x), static_cast<int16_t>(controlsY),
                                     static_cast<int16_t>(half), static_cast<int16_t>(buttonH)});
     button.label = store && store->model().fahrenheit ? tr(STR_WEATHER_UNITS_F) : tr(STR_WEATHER_UNITS_C);
     button.action = Units;
-    button.state = selection == 2 ? fui::StateSelected : fui::StateNormal;
+    button.state = shownSelection() == 2 ? fui::StateSelected : fui::StateNormal;
     screen.button(button, fui::Rect{static_cast<int16_t>(x + w - half), static_cast<int16_t>(controlsY),
                                     static_cast<int16_t>(half), static_cast<int16_t>(buttonH)});
   }

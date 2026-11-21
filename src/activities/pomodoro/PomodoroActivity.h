@@ -34,6 +34,8 @@ class PomodoroActivity final : public Activity, private UiAppHost {
   void activate(freeink::ui::ActionId action);
   void moveFocus(int delta);
   Focus visibleFocus() const;
+  // False where no Confirm key could act on the focus.
+  bool showsFocus() const;
   void openSettings();
   Action primaryAction() const;
   const char* primaryLabel() const;

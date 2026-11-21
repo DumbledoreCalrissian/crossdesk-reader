@@ -139,9 +139,12 @@ void PomodoroActivity::loop() {
     }
     return;
   }
+  if (!showsFocus()) return;
   ButtonNavigator::onNextPress([this] { moveFocus(1); });
   ButtonNavigator::onPreviousPress([this] { moveFocus(-1); });
 }
+
+bool PomodoroActivity::showsFocus() const { return mappedInput.hasConfirmButton(); }
 
 PomodoroActivity::Focus PomodoroActivity::visibleFocus() const {
   // Reset is hidden on Ready and completed phases.
@@ -219,7 +222,7 @@ const char* PomodoroActivity::statusLabel() const {
 void PomodoroActivity::buildHeader(UiScreen& screen) {
   fui::HeaderProps header;
   const auto band = prepareUiHeader(screen, renderer, header, tr(STR_POMODORO), Back);
-  if (visibleFocus() == Focus::Settings) {
+  if (showsFocus() && visibleFocus() == Focus::Settings) {
     // The header button has no selected state; paint its normal style as the selection.
     header.trailingStyles = themedSelectionStyles(screen.theme());
     header.trailingStyles.normal = header.trailingStyles.selected;
@@ -247,7 +250,7 @@ void PomodoroActivity::buildControls(UiScreen& screen) {
   primary.label = primaryLabel();
   primary.action = primaryAction();
   primary.styles = styles;
-  primary.state = focused == Focus::Primary ? fui::StateSelected : fui::StateNormal;
+  primary.state = showsFocus() && focused == Focus::Primary ? fui::StateSelected : fui::StateNormal;
   primary.text = theme.bodyText;
   primary.text.bold = true;
   primary.text.align = fui::TextAlign::Center;
@@ -261,7 +264,7 @@ void PomodoroActivity::buildControls(UiScreen& screen) {
   reset.label = tr(STR_POMODORO_RESET);
   reset.action = Reset;
   reset.styles = styles;
-  reset.state = focused == Focus::Reset ? fui::StateSelected : fui::StateNormal;
+  reset.state = showsFocus() && focused == Focus::Reset ? fui::StateSelected : fui::StateNormal;
   reset.text = theme.bodyText;
   reset.text.align = fui::TextAlign::Center;
   screen.button(primary, fui::Rect{row.x, row.y, half, row.height});

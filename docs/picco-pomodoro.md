@@ -34,6 +34,6 @@ Tap the header gear. Tap a value to adjust it; Back or a tap outside cancels.
 A changed duration applies immediately to a Ready timer. A paused phase keeps
 its current duration until Reset or the next phase.
 
-Up/Down selects controls and Confirm activates them. Setting
-**Controls → Short click** to **Confirm** lets a short power press activate the
-selected control. Touch remains the main way to use the app on Picco.
+Touch is the way to use the app on Picco. Up/Down do nothing here, and no
+control is highlighted. If **Controls → Short click** is set to **Confirm**,
+Up/Down select a control and a short power press activates it.

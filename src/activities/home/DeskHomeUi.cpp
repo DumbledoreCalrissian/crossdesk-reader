@@ -298,19 +298,24 @@ DeskHomeUi::Request DeskHomeUi::loopMenu(ButtonNavigator& navigator) {
     close();
     return Request::Open;
   };
-  navigator.onNext([&step] { step(true); });
-  navigator.onPrevious([&step] { step(false); });
-
-  const auto swipe = input.wasSwipe();
-  if (swipe != MappedInputManager::SwipeDir::None) {
-    if (swipe == MappedInputManager::SwipeDir::Up || swipe == MappedInputManager::SwipeDir::Down) {
-      step(swipe == MappedInputManager::SwipeDir::Up);
-    }
-    return request;
+  // Without a Confirm key a selection could never open: no highlight to move.
+  const bool selectable = input.hasConfirmButton();
+  if (selectable) {
+    navigator.onNext([&step] { step(true); });
+    navigator.onPrevious([&step] { step(false); });
   }
+
+  // Back first: the left-edge back swipe is also a plain swipe.
   if (input.wasReleased(MappedInputManager::Button::Back)) {
     close();
     return Request::Redraw;
+  }
+  const auto swipe = input.wasSwipe();
+  if (swipe != MappedInputManager::SwipeDir::None) {
+    if (selectable && (swipe == MappedInputManager::SwipeDir::Up || swipe == MappedInputManager::SwipeDir::Down)) {
+      step(swipe == MappedInputManager::SwipeDir::Up);
+    }
+    return request;
   }
   if (input.wasReleased(MappedInputManager::Button::Confirm)) return choose(selected);
 
@@ -320,7 +325,7 @@ DeskHomeUi::Request DeskHomeUi::loopMenu(ButtonNavigator& navigator) {
   const auto touch = input.rowTouch(row, rows.y, DeskTheme::menuRowStep(renderer), count, rows.x, rows.x + rows.width,
                                     GUI.getMenuRowHeight(renderer));
   if (touch == MappedInputManager::RowTouch::Down) {
-    if (selected == row) return request;
+    if (!selectable || selected == row) return request;
     selected = row;
     return Request::Redraw;
   }
@@ -352,7 +357,7 @@ void DeskHomeUi::draw(const bool buttonSelected, const bool hasBooks) const {
   const int count = itemCount();
   const HomeMenuItem slotItem = slot;
   DeskTheme::drawHomeMenuPanel(
-      renderer, DeskTheme::homeMenuPanelRect(renderer, count), count, selected,
+      renderer, DeskTheme::homeMenuPanelRect(renderer, count), count, input.hasConfirmButton() ? selected : -1,
       [slotItem](const int i) { return std::string(itemLabel(deskMenuItemAt(i, slotItem))); },
       [slotItem](const int i) { return itemIcon(deskMenuItemAt(i, slotItem)); });
 }
