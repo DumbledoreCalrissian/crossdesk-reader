@@ -15,6 +15,25 @@ SOURCE_MD = ROOT / "USER_GUIDE.md"
 OUTPUT_EPUB = ROOT / "CrossPoint_User_Guide.epub"
 LOGO_PNG = ROOT / "src/images/Logo120.png"
 
+# Serif cover fonts: Linux (CI) first, then macOS; Pillow's scalable default last.
+BOLD_FONTS = (
+    '/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf',
+    '/System/Library/Fonts/Supplemental/Georgia Bold.ttf',
+)
+REGULAR_FONTS = (
+    '/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf',
+    '/System/Library/Fonts/Supplemental/Georgia.ttf',
+)
+
+
+def cover_font(paths, size):
+    for path in paths:
+        try:
+            return ImageFont.truetype(path, size)
+        except OSError:
+            continue
+    return ImageFont.load_default(size=size)
+
 # Portrait cover dimensions matching the X4 display (480×800)
 COVER_W, COVER_H = 480, 800
 
@@ -137,16 +156,15 @@ def make_cover_png() -> bytes:
     logo_y = int(COVER_H * 0.28)
     cover.paste(logo, (logo_x, logo_y))
 
-    # Try to use a system font; fall back to default if unavailable
-    try:
-        font_title = ImageFont.truetype('/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf', 52)
-        font_sub = ImageFont.truetype('/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf', 32)
-    except OSError:
-        font_title = ImageFont.load_default()
-        font_sub = font_title
-
     title = 'CrossDesk Reader'
     subtitle = 'User Guide'
+    # Shrink the title until it fits inside the cover margins.
+    size = 52
+    font_title = cover_font(BOLD_FONTS, size)
+    while size > 24 and draw.textlength(title, font=font_title) > COVER_W - 80:
+        size -= 2
+        font_title = cover_font(BOLD_FONTS, size)
+    font_sub = cover_font(REGULAR_FONTS, 32)
 
     # Draw title text
     bbox = draw.textbbox((0, 0), title, font=font_title)
