@@ -1,4 +1,4 @@
-/* Brand colors: https://crosspointreader.com/brand */
+/* CrossDesk accents: lavender from the logo tile (#b9a7e6 to #937fd0). */
 :root  {
   color-scheme: light;
   --font-color: #1c1917;
@@ -9,14 +9,14 @@
   --border-color: #e7e5e4;
   --control-border: #d6d3d1;
   --muted-color: #706963;
-  --accent-color: #3d6652;
-  --accent-color-10: #f0f5f3;
-  --accent-hover-color: #305240;
+  --accent-color: #6b53b8;
+  --accent-color-10: #f2effb;
+  --accent-hover-color: #57409f;
   --toggle-bg: #d6d3d1;
   --danger-color: #b42318;
   --danger-hover: #912018;
-  --button-bg: #4a7a62;
-  --button-hover: #3d6652;
+  --button-bg: #7860c4;
+  --button-hover: #6b53b8;
   --button-text: #fff;
   --success-color: #3d6652;
   --danger-bg: #fef2f2;
@@ -982,12 +982,12 @@ body.web-ui  {
     --border-color: #504b45;
     --control-border: #78716c;
     --muted-color: #a8a29e;
-    --accent-color: #8fb9a6;
-    --accent-color-10: #35473d;
-    --accent-hover-color: #b3cfc2;
+    --accent-color: #c3b4ef;
+    --accent-color-10: #3b3452;
+    --accent-hover-color: #ddd3f8;
     --toggle-bg: #57534e;
-    --button-bg: #8fb9a6;
-    --button-hover: #b3cfc2;
+    --button-bg: #c3b4ef;
+    --button-hover: #ddd3f8;
     --button-text: #1c1917;
     --success-color: #8fb9a6;
     --danger-color: #fca5a5;
