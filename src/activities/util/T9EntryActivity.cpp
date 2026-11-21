@@ -365,7 +365,7 @@ void T9EntryActivity::render(RenderLock&&) {
     fui::KeyGridKey k;
     k.label = labels[key];
     k.secondaryLabel = lettersPage ? DIGIT_LABELS[key] : nullptr;
-    k.kind = key == 0 && spaceKey ? fui::KeyKind::Space : fui::KeyKind::Normal;
+    if (key == 0 && spaceKey) k.label = nullptr;  // drawn as a space symbol below
     k.value = static_cast<int16_t>(DIGIT_BASE + key);
     return k;
   };
@@ -412,6 +412,20 @@ void T9EntryActivity::render(RenderLock&&) {
   props.rows = GRID_ROWS;
   props.cols = GRID_COLS;
   fui::keyGrid(frame, gridRect, props);
+  if (spaceKey) {
+    // Space symbol: a line with raised ends, centered on key 0 (row 3, column 1).
+    // Uses the same cell math as fui::keyGrid(); update both together.
+    const int cellW = (gridRect.width - (GRID_COLS - 1) * KEY_GAP) / GRID_COLS;
+    const int cellH = (gridRect.height - (GRID_ROWS - 1) * KEY_GAP) / GRID_ROWS;
+    const int cx = gridRect.x + cellW + KEY_GAP + cellW / 2;
+    const int cy = gridRect.y + 3 * (cellH + KEY_GAP) + cellH / 2;
+    const int half = cellW / 6;
+    const int rise = std::max(3, cellH / 12);
+    const int base = cy + rise / 2;
+    renderer.drawLine(cx - half, base, cx + half, base, 3, true);
+    renderer.drawLine(cx - half, base - rise, cx - half, base, 3, true);
+    renderer.drawLine(cx + half, base - rise, cx + half, base, 3, true);
+  }
   props.keys = sideKeys;
   props.rows = SIDE_ROWS;
   props.cols = 1;
