@@ -13,7 +13,7 @@
 #include "CrossPointSettings.h"
 #include "MappedInputManager.h"
 #include "WifiCredentialStore.h"
-#include "activities/util/KeyboardEntryActivity.h"
+#include "activities/util/TextEntry.h"
 #include "components/UITheme.h"
 #include "fontIds.h"
 #include "util/PluginEvents.h"
@@ -347,10 +347,10 @@ void WifiSelectionActivity::promptPasswordEntry() {
   // Show password entry
   state = WifiSelectionState::PASSWORD_ENTRY;
   // Don't allow screen updates while changing activity
-  startActivityForResult(std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, tr(STR_ENTER_WIFI_PASSWORD),
-                                                                 "",  // No initial text
-                                                                 64,  // Max password length
-                                                                 InputType::Text),
+  startActivityForResult(makeTextEntry(renderer, mappedInput, tr(STR_ENTER_WIFI_PASSWORD),
+                                       "",  // No initial text
+                                       64,  // Max password length
+                                       InputType::Text),
                          [this](const ActivityResult& result) {
                            if (result.isCancelled) {
                              state = WifiSelectionState::NETWORK_LIST;
@@ -370,10 +370,10 @@ void WifiSelectionActivity::promptHiddenSsid() {
 
   // Suppress rendering during the activity transition (see render()).
   state = WifiSelectionState::HIDDEN_SSID_ENTRY;
-  startActivityForResult(std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, tr(STR_ENTER_WIFI_SSID),
-                                                                 "",  // No initial text
-                                                                 32,  // Max SSID length (IEEE 802.11: 32 bytes)
-                                                                 InputType::Text),
+  startActivityForResult(makeTextEntry(renderer, mappedInput, tr(STR_ENTER_WIFI_SSID),
+                                       "",  // No initial text
+                                       32,  // Max SSID length (IEEE 802.11: 32 bytes)
+                                       InputType::Text),
                          [this](const ActivityResult& result) {
                            if (result.isCancelled) {
                              state = WifiSelectionState::NETWORK_LIST;

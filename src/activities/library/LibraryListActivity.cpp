@@ -19,7 +19,7 @@
 #include "MappedInputManager.h"
 #include "RecentBooksStore.h"
 #include "activities/util/ConfirmationActivity.h"
-#include "activities/util/KeyboardEntryActivity.h"
+#include "activities/util/TextEntry.h"
 #include "components/UIScale.h"
 #include "components/UITheme.h"
 #include "components/UiScreenHeader.h"
@@ -460,8 +460,7 @@ void LibraryListActivity::openSearch() {
   // No key filtering here on purpose. Greying out the letters that lead nowhere
   // was built, tested on device and removed: a letter you can see but cannot
   // reach reads as a broken keyboard, and the eye keeps returning to it.
-  auto keyboard = makeUniqueNoThrow<KeyboardEntryActivity>(renderer, mappedInput, tr(STR_LIBRARY_SEARCH), query, 48,
-                                                           InputType::Text);
+  auto keyboard = makeTextEntry(renderer, mappedInput, tr(STR_LIBRARY_SEARCH), query, 48, InputType::Text);
   if (!keyboard) {
     LOG_ERR("LIB", "OOM: search keyboard");
     return;

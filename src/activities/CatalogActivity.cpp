@@ -10,7 +10,7 @@
 #include "MappedInputManager.h"
 #include "SilentRestart.h"
 #include "activities/network/WifiSelectionActivity.h"
-#include "activities/util/KeyboardEntryActivity.h"
+#include "activities/util/TextEntry.h"
 #include "components/CatalogScreens.h"
 #include "components/icons/search32.h"
 
@@ -76,7 +76,7 @@ void CatalogActivity::launchWifiSelection() {
 void CatalogActivity::wifiSelectionCancelled() { fail(StrId::STR_WIFI_CONN_FAILED); }
 
 void CatalogActivity::launchSearch() {
-  auto keyboard = makeUniqueNoThrow<KeyboardEntryActivity>(renderer, mappedInput, tr(STR_SEARCH), searchPrefill());
+  auto keyboard = makeTextEntry(renderer, mappedInput, tr(STR_SEARCH), searchPrefill());
   if (!keyboard) {
     LOG_ERR("CAT", "OOM: search keyboard");
     fail(StrId::STR_MEMORY_ERROR);

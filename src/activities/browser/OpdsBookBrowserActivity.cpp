@@ -26,7 +26,7 @@
 #include "MappedInputManager.h"
 #include "OpdsTokenStore.h"
 #include "activities/util/DetailsActivity.h"
-#include "activities/util/KeyboardEntryActivity.h"
+#include "activities/util/TextEntry.h"
 #include "components/UITheme.h"
 #include "components/icons/opdsIcons.h"
 #include "network/HttpDownloader.h"
@@ -758,7 +758,7 @@ void OpdsBookBrowserActivity::promptLcpPassphrase(const bool retry) {
   const char* title = retry                             ? tr(STR_LCP_WRONG_PASSPHRASE)
                       : !pendingLcpLicense.hint.empty() ? pendingLcpLicense.hint.c_str()
                                                         : tr(STR_LCP_PASSPHRASE);
-  auto keyboard = makeUniqueNoThrow<KeyboardEntryActivity>(renderer, mappedInput, title);
+  auto keyboard = makeTextEntry(renderer, mappedInput, title);
   if (!keyboard) {
     fail(StrId::STR_MEMORY_ERROR);
     return;

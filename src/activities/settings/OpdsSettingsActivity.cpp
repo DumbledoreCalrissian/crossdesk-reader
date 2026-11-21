@@ -7,7 +7,7 @@
 
 #include "MappedInputManager.h"
 #include "OpdsServerStore.h"
-#include "activities/util/KeyboardEntryActivity.h"
+#include "activities/util/TextEntry.h"
 #include "components/UITheme.h"
 
 namespace fui = freeink::ui;
@@ -111,9 +111,8 @@ void OpdsSettingsActivity::handleSelection() {
         requestUpdate();
       }
     };
-    startActivityForResult(std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, tr(STR_SERVER_NAME),
-                                                                   editServer.name, 63, InputType::Text),
-                           handler);
+    startActivityForResult(
+        makeTextEntry(renderer, mappedInput, tr(STR_SERVER_NAME), editServer.name, 63, InputType::Text), handler);
   } else if (nav.selected == 1) {
     // Server URL
     const std::string prefillUrl = editServer.url.empty() ? "https://" : editServer.url;
@@ -125,9 +124,8 @@ void OpdsSettingsActivity::handleSelection() {
         requestUpdate();
       }
     };
-    startActivityForResult(std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, tr(STR_OPDS_SERVER_URL),
-                                                                   prefillUrl, 127, InputType::Url),
-                           handler);
+    startActivityForResult(
+        makeTextEntry(renderer, mappedInput, tr(STR_OPDS_SERVER_URL), prefillUrl, 127, InputType::Url), handler);
   } else if (nav.selected == 2) {
     // Username
     auto handler = [this](const ActivityResult& result) {
@@ -138,9 +136,8 @@ void OpdsSettingsActivity::handleSelection() {
         requestUpdate();
       }
     };
-    startActivityForResult(std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, tr(STR_USERNAME),
-                                                                   editServer.username, 63, InputType::Text),
-                           handler);
+    startActivityForResult(
+        makeTextEntry(renderer, mappedInput, tr(STR_USERNAME), editServer.username, 63, InputType::Text), handler);
   } else if (nav.selected == 3) {
     // Password
     auto handler = [this](const ActivityResult& result) {
@@ -151,9 +148,8 @@ void OpdsSettingsActivity::handleSelection() {
         requestUpdate();
       }
     };
-    startActivityForResult(std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, tr(STR_PASSWORD),
-                                                                   editServer.password, 63, InputType::Text),
-                           handler);
+    startActivityForResult(
+        makeTextEntry(renderer, mappedInput, tr(STR_PASSWORD), editServer.password, 63, InputType::Text), handler);
   } else if (nav.selected == CUSTOM_HEADER_1_INDEX || nav.selected == CUSTOM_HEADER_2_INDEX) {
     // Custom Header 1 or 2 - single "Name: Value" line, parsed on save.
     const size_t slot = static_cast<size_t>(nav.selected == CUSTOM_HEADER_1_INDEX ? 0 : 1);
@@ -167,9 +163,8 @@ void OpdsSettingsActivity::handleSelection() {
         requestUpdate();
       }
     };
-    startActivityForResult(
-        std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, I18N.get(label), prefill, 160, InputType::Text),
-        handler);
+    startActivityForResult(makeTextEntry(renderer, mappedInput, I18N.get(label), prefill, 160, InputType::Text),
+                           handler);
   } else if (nav.selected == BASE_ITEMS && !isNewServer) {
     // Delete flow is only available for existing servers.
     if (!OPDS_STORE.removeServer(static_cast<size_t>(serverIndex))) {

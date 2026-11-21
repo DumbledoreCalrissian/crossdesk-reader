@@ -447,6 +447,9 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
   // books someone reads is not necessarily the language of their UI.
   // See keyboard_layouts:: for the bit assignment and the defaulting rules.
   uint16_t keyboardLayouts = 0;
+  // Text entry on touch devices: the full keyboard or the T9 phone keypad.
+  enum KEYBOARD_TYPE : uint8_t { KEYBOARD_FULL = 0, KEYBOARD_T9 = 1, KEYBOARD_TYPE_COUNT };
+  uint8_t keyboardType = KEYBOARD_FULL;
   // Bluetooth page turner, saved under the keys lib/BlePageTurner reads and writes (BlePageTurnerJson.h).
   bleturner::Config ble;
   // Quick Resume: keep current content visible with moon icon instead of showing a static sleep screen.

@@ -14,7 +14,7 @@
 
 #include "ManualSleep.h"
 #include "activities/network/WifiSelectionActivity.h"
-#include "activities/util/KeyboardEntryActivity.h"
+#include "activities/util/TextEntry.h"
 #include "components/UITheme.h"
 #include "components/UiAppHelpers.h"
 #include "components/UiScreenHeader.h"
@@ -95,7 +95,7 @@ void WeatherActivity::updateText() {
   }
 }
 void WeatherActivity::openLocation() {
-  auto keyboard = makeUniqueNoThrow<KeyboardEntryActivity>(renderer, mappedInput, tr(STR_WEATHER_CITY), query, 64);
+  auto keyboard = makeTextEntry(renderer, mappedInput, tr(STR_WEATHER_CITY), query, 64);
   if (!keyboard) {
     LOG_ERR("WEATHER", "OOM: location keyboard (%u bytes)", unsigned(sizeof(KeyboardEntryActivity)));
     RenderLock lock(*this);

@@ -207,6 +207,10 @@ void forEachBaseSetting(SettingVisitor visit, void* context) {
            .withWebHidden());
 
   // --- System ---
+  if (BoardConfig::hasTouch()) {
+    emit(SettingInfo::Enum(StrId::STR_KEYBOARD_TYPE, &CrossPointSettings::keyboardType,
+                           {StrId::STR_KEYBOARD_FULL, StrId::STR_KEYBOARD_T9}, "keyboardType", StrId::STR_CAT_SYSTEM));
+  }
   emit(SettingInfo::Value(
       StrId::STR_TIME_TO_SLEEP, &CrossPointSettings::sleepTimeoutMinutes,
       {CrossPointSettings::MIN_SLEEP_TIMEOUT_MINUTES, CrossPointSettings::MAX_SLEEP_TIMEOUT_MINUTES, 1},

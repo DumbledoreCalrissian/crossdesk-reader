@@ -9,7 +9,7 @@
 #include <cstdio>
 
 #include "activities/util/ConfirmationActivity.h"
-#include "activities/util/KeyboardEntryActivity.h"
+#include "activities/util/TextEntry.h"
 #include "components/UITheme.h"
 #include "components/UiScreenHeader.h"
 #include "components/icons/headerIcons.h"
@@ -205,9 +205,8 @@ void TodoActivity::enterText(uint32_t id) {
     return;
   }
   const auto* task = store.model().find(id);
-  auto keyboard =
-      makeUniqueNoThrow<KeyboardEntryActivity>(renderer, mappedInput, id ? tr(STR_TODO_EDIT) : tr(STR_TODO_NEW),
-                                               task ? task->text : "", TodoModel::MAX_TEXT_BYTES);
+  auto keyboard = makeTextEntry(renderer, mappedInput, id ? tr(STR_TODO_EDIT) : tr(STR_TODO_NEW),
+                                task ? task->text : "", TodoModel::MAX_TEXT_BYTES);
   if (!keyboard) {
     LOG_ERR("TODO", "Keyboard allocation failed: %u bytes", static_cast<unsigned>(sizeof(KeyboardEntryActivity)));
     {
