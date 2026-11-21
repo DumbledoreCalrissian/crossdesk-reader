@@ -76,5 +76,4 @@ class FrontlightPanelActivity final : public Activity, private UiAppHost {
   void onExit() override;
   void loop() override;
   void render(RenderLock&&) override;
-  bool handleHomeGesture() override;
 };

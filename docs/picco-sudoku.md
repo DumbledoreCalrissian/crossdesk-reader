@@ -55,15 +55,15 @@ Sudoku is reopened. Back up the card before attempting recovery.
 
 ## Downloads, cancellation and deletion
 
-**Cancel**, Back or the Home gesture during a transfer stops the download.
+**Cancel** or Back during a transfer stops the download. The Home gesture
+stops it too, then goes Home.
 An interrupted download keeps a partial file and resumes on the next attempt.
 Already installed packs remain available. Download all stops on the first
 failure or cancellation and keeps packs already installed.
 
 Wi-Fi turns off after transfer. **Back/Done** from the result briefly restarts
 into Sudoku settings; Back there returns to the game list. Home outside a
-transfer returns to Home. In Control Center, the first Home gesture closes
-the panel. Manual sleep stops the transfer before sleeping and keeps its partial.
+transfer returns to Home, also from Control Center. Manual sleep stops the transfer before sleeping and keeps its partial.
 
 **Delete** asks for confirmation and removes that difficulty's pack and partial
 download, preserving the saved game. Replacing a pack needs enough card space

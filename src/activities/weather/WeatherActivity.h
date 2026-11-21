@@ -33,6 +33,7 @@ class WeatherActivity final : public Activity, private UiAppHost {
   int selection = 0;
   const char* notice = nullptr;
   bool cancelRequested = false;
+  bool goHomeAfterCancel = false;
   bool networkUsed = false;
   uint64_t now = 0;
   static void screenFn(UiScreen& screen, void* context);

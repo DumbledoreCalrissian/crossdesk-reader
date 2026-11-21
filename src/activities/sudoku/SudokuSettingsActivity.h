@@ -22,6 +22,7 @@ class SudokuSettingsActivity final : public UiListActivity {
   bool networkUsed = false;
   bool returnToSettings = false;
   bool cancelRequested = false;
+  bool goHomeAfterCancel = false;
   int requestedDifficulty = -1;
   int currentDifficulty = 0;
   int completed = 0;

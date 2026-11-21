@@ -236,7 +236,8 @@ bool WeatherActivity::pollCancel() {
 #endif
   mappedInput.update(true);
   if (requestManualSleep()) return true;
-  if (mappedInput.wasReleased(MappedInputManager::Button::Back) || mappedInput.wasHomeGesture()) cancelRequested = true;
+  if (mappedInput.wasHomeGesture()) goHomeAfterCancel = cancelRequested = true;
+  if (mappedInput.wasReleased(MappedInputManager::Button::Back)) cancelRequested = true;
   routeTouch(mappedInput);
   return cancelRequested;
 }
@@ -244,7 +245,7 @@ void WeatherActivity::transfer() {
   {
     RenderLock lock(*this);
     mode = Mode::Transferring;
-    cancelRequested = false;
+    cancelRequested = goHomeAfterCancel = false;
     closeRouting();
     if (auto* cache = renderer.getFontCacheManager()) cache->releaseSdFontCaches();
   }
@@ -303,6 +304,11 @@ void WeatherActivity::transfer() {
     closeRouting();
   }
   LOG_DBG("WEATHER", "Transfer finished (request %u)", unsigned(result));
+  // The Home gesture cancelled the transfer; finish its trip Home.
+  if (goHomeAfterCancel) {
+    activityManager.goHome();
+    return;
+  }
   requestUpdate();
 }
 void WeatherActivity::moveSelection(int delta) {

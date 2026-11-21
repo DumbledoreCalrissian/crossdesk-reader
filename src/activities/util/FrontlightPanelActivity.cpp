@@ -229,11 +229,6 @@ void FrontlightPanelActivity::toggleLight() {
 
 void FrontlightPanelActivity::close() { finish(); }
 
-bool FrontlightPanelActivity::handleHomeGesture() {
-  close();
-  return true;
-}
-
 void FrontlightPanelActivity::loop() {
   const auto touch = routeTouch(mappedInput, false, /*routeHeld=*/true);
   if (touch.routed) {

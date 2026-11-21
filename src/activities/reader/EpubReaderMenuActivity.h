@@ -51,7 +51,6 @@ class EpubReaderMenuActivity final : public UiListActivity {
   void onEnter() override;
   void onExit() override;
   void render(RenderLock&&) override;
-  bool handleHomeGesture() override;
   bool acceptsRemoteInput() const override { return routingReady(); }
 
  private:

@@ -179,7 +179,8 @@ bool SudokuSettingsActivity::pollCancel() {
 #endif
   mappedInput.update(true);
   if (requestManualSleep()) return true;
-  if (mappedInput.wasReleased(MappedInputManager::Button::Back) || mappedInput.wasHomeGesture()) cancelRequested = true;
+  if (mappedInput.wasHomeGesture()) goHomeAfterCancel = cancelRequested = true;
+  if (mappedInput.wasReleased(MappedInputManager::Button::Back)) cancelRequested = true;
   routeTouch(mappedInput);
   return cancelRequested;
 }
@@ -192,7 +193,7 @@ void SudokuSettingsActivity::transfer() {
     closeRouting();
     if (auto* cache = renderer.getFontCacheManager()) cache->releaseSdFontCaches();
   }
-  cancelRequested = false;
+  cancelRequested = goHomeAfterCancel = false;
   const char* message = tr(STR_SUDOKU_DOWNLOAD_DONE);
   for (int d = 0; d < sudoku::DIFFICULTIES; ++d) {
     if (requestedDifficulty >= 0 && d != requestedDifficulty) continue;
@@ -280,6 +281,11 @@ void SudokuSettingsActivity::transfer() {
     closeRouting();
   }
   LOG_DBG("SUDOKU", "Download result: %s (installed %d)", message, completed);
+  // The Home gesture cancelled the download; finish its trip Home.
+  if (goHomeAfterCancel) {
+    activityManager.goHome();
+    return;
+  }
   requestUpdate();
 }
 

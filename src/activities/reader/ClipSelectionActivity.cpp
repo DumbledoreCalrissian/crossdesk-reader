@@ -450,11 +450,6 @@ void ClipSelectionActivity::cancel() {
   finish();
 }
 
-bool ClipSelectionActivity::handleHomeGesture() {
-  cancel();
-  return true;
-}
-
 void ClipSelectionActivity::loopButtons() {
   const uint8_t buttons = selectionInput.pollButtons(mappedInput, millis());
   if (buttons) {
