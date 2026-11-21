@@ -450,6 +450,20 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
   // Text entry on touch devices: the full keyboard or the T9 phone keypad.
   enum KEYBOARD_TYPE : uint8_t { KEYBOARD_FULL = 0, KEYBOARD_T9 = 1, KEYBOARD_TYPE_COUNT };
   uint8_t keyboardType = KEYBOARD_FULL;
+  // T9 keypad height; see t9KeypadHeightPercent().
+  enum KEYPAD_HEIGHT : uint8_t { KEYPAD_SMALL = 0, KEYPAD_MEDIUM = 1, KEYPAD_LARGE = 2, KEYPAD_HEIGHT_COUNT };
+  uint8_t t9KeypadHeight = KEYPAD_MEDIUM;
+  // Share of the screen height the T9 keypad uses.
+  int t9KeypadHeightPercent() const {
+    switch (t9KeypadHeight) {
+      case KEYPAD_SMALL:
+        return 42;
+      case KEYPAD_LARGE:
+        return 62;
+      default:
+        return 52;
+    }
+  }
   // Bluetooth page turner, saved under the keys lib/BlePageTurner reads and writes (BlePageTurnerJson.h).
   bleturner::Config ble;
   // Quick Resume: keep current content visible with moon icon instead of showing a static sleep screen.

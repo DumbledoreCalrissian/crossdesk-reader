@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cstring>
 
+#include "CrossPointSettings.h"
 #include "HapticFeedback.h"
 #include "MappedInputManager.h"
 #include "components/UITheme.h"
@@ -28,8 +29,6 @@ constexpr int GRID_ROWS = 4;
 constexpr int SIDE_ROWS = 3;
 constexpr int KEY_GAP = 8;
 constexpr int PANEL_PADDING = 6;
-// Keypad height as a share of the screen: tall keys for a fingertip.
-constexpr int KEYPAD_HEIGHT_PERCENT = 52;
 // Characters shown on a key; key 1 has more than fit.
 constexpr size_t MAX_LABEL_CHARS = 5;
 // No hold actions on this keypad: a slow tap must still type.
@@ -202,7 +201,7 @@ T9EntryActivity::FieldLayout T9EntryActivity::fieldLayout() const {
   FieldLayout f;
   f.lineHeight = renderer.getLineHeight(UI_12_FONT_ID);
   f.top = metrics.topPadding + metrics.headerHeight + metrics.verticalSpacing * 2;
-  f.keypadTop = renderer.getScreenHeight() - renderer.getScreenHeight() * KEYPAD_HEIGHT_PERCENT / 100;
+  f.keypadTop = renderer.getScreenHeight() - renderer.getScreenHeight() * SETTINGS.t9KeypadHeightPercent() / 100;
   f.textLeft = content.x + metrics.contentSidePadding;
   int right = content.x + content.width - metrics.contentSidePadding;
   if (inputType == InputType::Password) {

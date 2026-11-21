@@ -210,6 +210,9 @@ void forEachBaseSetting(SettingVisitor visit, void* context) {
   if (BoardConfig::hasTouch()) {
     emit(SettingInfo::Enum(StrId::STR_KEYBOARD_TYPE, &CrossPointSettings::keyboardType,
                            {StrId::STR_KEYBOARD_FULL, StrId::STR_KEYBOARD_T9}, "keyboardType", StrId::STR_CAT_SYSTEM));
+    emit(SettingInfo::Enum(StrId::STR_KEYPAD_HEIGHT, &CrossPointSettings::t9KeypadHeight,
+                           {StrId::STR_KEYPAD_SMALL, StrId::STR_KEYPAD_MEDIUM, StrId::STR_KEYPAD_LARGE},
+                           "t9KeypadHeight", StrId::STR_CAT_SYSTEM));
   }
   emit(SettingInfo::Value(
       StrId::STR_TIME_TO_SLEEP, &CrossPointSettings::sleepTimeoutMinutes,
