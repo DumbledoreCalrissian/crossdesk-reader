@@ -86,17 +86,12 @@ when it remains visible for at least 2 seconds; one dwell is capped at 1800
 seconds. Reverse turns, chapter skips, failed turns, and shorter displays are
 excluded and re-anchor the timer. At least 10 active seconds and a trustworthy
 positive start time are required. EPUB retains basis-point precision; TXT/XTC
-may report whole-percent steps. The file is hashed only for an emit-worthy
-summary, and only when a subscriber exists or KOSync document matching is
-set to Binary.
+may report whole-percent steps. The document hash is calculated lazily only
+when an emit-worthy summary and a subscriber both exist.
 
-The firmware also appends every emit-worthy summary to its own history,
-`/.crosspoint/reading_sessions.jsonl`, with or without a subscriber. That
-history is what **Sync Progress** uploads to a CrossPoint Sync server. Its
-`doc` field follows the KOSync document matching setting, so it can differ
-from the binary `document` that plugins receive. Each line also stores the
-book's SD path and title so the file can be read on its own; those two fields
-are never uploaded.
+These plugin summaries are separate from the sessions that **Sync Progress**
+uploads to a CrossPoint Sync server. Those come from the EPUB reading
+statistics, so their times can differ from `duration_seconds` here.
 
 `end_time` is deliberately not the wall-clock time of the last interaction.
 Idle gaps are removed, so it always equals `start_time + duration_seconds` and
@@ -185,7 +180,7 @@ sleep that ends the reading turn.
 
 If WiFi is not already up, the device brings it up for the drain: with battery at
 least 20% and a saved network in range (the last-connected one is preferred;
-with several saved networks a scan picks one), it shows a popup, joins with a
+with several saved networks a scan picks up to two to try), it shows a popup, joins with a
 10-second deadline, drains, and proceeds to sleep. Sleep is
 never blocked on the network — a failed join, low battery, or a mid-drain failure
 just sleeps with the previous image, and the queued events retry on the next

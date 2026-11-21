@@ -28,6 +28,11 @@ void EpubReadingStats::pageShown(const uint32_t now, const bool samePage) {
     completeNavigation(now);
   }
   if (calendar && !collector.isTiming()) calendar->pageShown(now);
+  if (!sessionStarted) {
+    sessionStarted = true;
+    sessionStartedAt = now;
+    sessionBase = collector.totals().readingMilliseconds;
+  }
   collector.pageShown(now);
 }
 
@@ -84,6 +89,7 @@ bool EpubReadingStats::reset() {
     return false;
   }
   calendarAccounted = 0;
+  sessionBase = 0;
   collector = readingstats::Collector{};
   beforeNavigation = readingstats::Collector{};
   pendingNavigation = false;
@@ -96,4 +102,11 @@ void EpubReadingStats::recordCalendar(uint32_t end, uint32_t now, bool force) {
   const auto total = collector.totals().readingMilliseconds;
   if (calendar) calendar->record(total >= calendarAccounted ? total - calendarAccounted : 0, end, now, force);
   calendarAccounted = total;
+}
+
+EpubReadingStats::Session EpubReadingStats::takeSession() {
+  if (!stopped || !sessionStarted) return {};
+  sessionStarted = false;
+  const uint64_t total = collector.totals().readingMilliseconds;
+  return {sessionStartedAt, static_cast<uint32_t>((total > sessionBase ? total - sessionBase : 0) / 1000)};
 }

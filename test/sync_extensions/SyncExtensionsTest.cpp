@@ -160,7 +160,7 @@ void bookmarksMerge() {
 void engineGatesEveryUpload() {
   fake::reset();
   assert(BookmarkFile::save(book, {bookmark("/local", false)}));
-  assert(readingSessionLog::append(document, book, "A \"quoted\" title", 1700000000, 600, 0, 0));
+  assert(readingSessionLog::append(document, 1700000000, 600, 0, 0));
   syncCredentials.enabled = false;  // Sync Clippings off
   progressFetches.clear();
 
@@ -228,25 +228,19 @@ void sessionsUploadOnce() {
     return json;
   };
 
-  assert(!readingSessionLog::append("not-a-document", book, "Title", 1700000000, 60, 0, 10));
-  assert(readingSessionLog::append(document, book, "A \"quoted\" title", 1700000000, 600, 100, 250));
-  assert(readingSessionLog::append(document, book, "A \"quoted\" title", fake::now + 3600, 600, 250,
-                                   300));  // wrong clock: kept, not uploaded
-  for (int i = 1; i <= 21; ++i)
-    assert(readingSessionLog::append(document, book, "A \"quoted\" title", 1700000000 + i * 1000, 30, 0, 0));
-
-  // Path and title are stored escaped, and a path too long for one line is left out.
-  const auto& log = fake::files["/.crosspoint/reading_sessions.jsonl"]->bytes;
-  const std::string stored(log.begin(), log.end());
-  assert(stored.find("\"title\":\"A \\\"quoted\\\" title\",\"path\":\"/book.epub\"}\n") != std::string::npos);
-  assert(readingSessionLog::append(document, std::string(600, 'p'), "Long", 1700050000, 30, 0, 0));
-  const std::string grown(log.begin(), log.end());
-  assert(grown.find("\"title\":\"Long\"}\n") != std::string::npos && grown.find("ppp") == std::string::npos);
+  assert(!readingSessionLog::append("not-a-document", 1700000000, 60, 0, 10));
+  assert(!readingSessionLog::append(document, 1700000000, 9, 0, 10));  // too short for the server
+  assert(readingSessionLog::append(document, 1700000000, 600, 100, 250));
+  assert(readingSessionLog::append(document, fake::now + 3600, 600, 250, 300));  // wrong clock: dropped
+  for (int i = 1; i <= 21; ++i) assert(readingSessionLog::append(document, 1700000000 + i * 1000, 30, 0, 0));
+  const char* queue = "/.crosspoint/reading_sessions.jsonl";
+  const std::string stored(fake::files[queue]->bytes.begin(), fake::files[queue]->bytes.end());
+  assert(stored.find("title") == std::string::npos && stored.find("path") == std::string::npos);
 
   SyncRequest sync;
   // A server that does not list the stored ids leaves everything queued.
   assert(!readingSessionLog::upload(sync));
-  assert(uploads.size() == 1);
+  assert(uploads.size() == 1 && fake::files.count(queue));
 
   uploads.clear();
   acknowledge = true;
@@ -257,37 +251,70 @@ void sessionsUploadOnce() {
   assert(first["device_id"] == "crosspoint-reader" && first["items"].size() == 20);
   assert(first["items"][0]["session_id"] == "1700000000-a0a1a2a3a4a5");
   assert(first["items"][0]["document"] == document);
-  assert(uploads[0].find("title") == std::string::npos && uploads[0].find("/book.epub") == std::string::npos);
   assert(first["items"][0]["started_at"] == 1700000000 && first["items"][0]["ended_at"] == 1700000600);
   assert(first["items"][0]["seconds"] == 600 && first["items"][0]["utc_offset_minutes"].is<int>());
-  assert(acceptedCount(uploads[1]) == 3);
+  assert(acceptedCount(uploads[1]) == 2);
+  // Accepted and rejected sessions leave the queue.
+  assert(!fake::files.count(queue));
 
   uploads.clear();
   assert(readingSessionLog::upload(sync));
   assert(uploads.empty());
 
   // Only sessions added since the last upload are sent.
-  assert(readingSessionLog::append(document, book, "A \"quoted\" title", 1700100000, 45, 0, 0));
+  assert(readingSessionLog::append(document, 1700100000, 45, 0, 0));
   assert(readingSessionLog::upload(sync));
   assert(uploads.size() == 1 && acceptedCount(uploads[0]) == 1);
 
   // A power cut left an unfinished line. The next session starts on its own line and is uploaded.
-  auto& bytes = fake::files["/.crosspoint/reading_sessions.jsonl"]->bytes;
+  assert(readingSessionLog::append(document, 1700150000, 45, 0, 0));
+  auto& bytes = fake::files[queue]->bytes;
   const char cut[] = "{\"doc\":\"";
   bytes.insert(bytes.end(), cut, cut + sizeof(cut) - 1);
-  assert(readingSessionLog::append(document, book, "After the cut", 1700200000, 45, 0, 0));
+  assert(readingSessionLog::append(document, 1700200000, 45, 0, 0));
   uploads.clear();
   assert(readingSessionLog::upload(sync));
-  assert(uploads.size() == 1 && acceptedCount(uploads[0]) == 1);
+  assert(uploads.size() == 1 && acceptedCount(uploads[0]) == 2);
 
-  // An unfinished last line is not uploaded, and the upload position stays in front of it.
-  bytes.insert(bytes.end(), cut, cut + sizeof(cut) - 1);
+  // An unfinished last line is not uploaded and stays queued for the next append to close.
+  assert(readingSessionLog::append(document, 1700250000, 45, 0, 0));
+  auto& tail = fake::files[queue]->bytes;
+  tail.insert(tail.end(), cut, cut + sizeof(cut) - 1);
   uploads.clear();
   assert(readingSessionLog::upload(sync));
-  assert(uploads.empty());
-  assert(readingSessionLog::append(document, book, "After the cut", 1700300000, 45, 0, 0));
+  assert(uploads.size() == 1 && acceptedCount(uploads[0]) == 1);
+  assert(fake::files[queue]->bytes.size() == sizeof(cut) - 1);
+  assert(readingSessionLog::append(document, 1700300000, 45, 0, 0));
+  uploads.clear();
   assert(readingSessionLog::upload(sync));
   assert(uploads.size() == 1 && acceptedCount(uploads[0]) == 1);
+}
+
+void queueStaysBounded() {
+  fake::reset();
+  const char* queue = "/.crosspoint/reading_sessions.jsonl";
+  for (int i = 0; i < 1000; ++i) assert(readingSessionLog::append(document, 1700000000 + i * 100, 60, 0, 0));
+  const auto& bytes = fake::files[queue]->bytes;
+  assert(bytes.size() <= readingSessionLog::MAX_QUEUE_BYTES && bytes.size() > readingSessionLog::MAX_QUEUE_BYTES / 2);
+  const std::string stored(bytes.begin(), bytes.end());
+  // The oldest sessions were dropped, whole lines only; the newest is kept.
+  assert(stored.find("\"start\":1700000000,") == std::string::npos);
+  assert(stored.find("\"start\":1700099900,") != std::string::npos);
+  assert(stored.front() == '{' && stored.back() == '\n');
+
+  // A power cut while shortening leaves only the temporary file, which is restored.
+  fake::files["/.crosspoint/reading_sessions.tmp"] = fake::files[queue];
+  fake::files.erase(queue);
+  assert(readingSessionLog::append(document, 1800000000, 60, 0, 0));
+  assert(fake::files.count(queue) && !fake::files.count("/.crosspoint/reading_sessions.tmp"));
+  assert(fake::files[queue]->bytes.size() > readingSessionLog::MAX_QUEUE_BYTES / 2);
+}
+
+void queueNeedsExtensionServer() {
+  syncCredentials.serverType = KOReaderServerType::KOSYNC;
+  assert(!readingSessionLog::enabled());
+  syncCredentials.serverType = KOReaderServerType::CROSSPOINT;
+  assert(readingSessionLog::enabled());
 }
 
 void summaryIsCutOnCharacterBoundary() {
@@ -303,6 +330,8 @@ int main() {
   bookmarksMerge();
   engineGatesEveryUpload();
   sessionsUploadOnce();
+  queueStaysBounded();
+  queueNeedsExtensionServer();
   summaryIsCutOnCharacterBoundary();
   puts("Sync extension tests passed");
 }

@@ -6,9 +6,7 @@
 #include <KOReaderSyncClient.h>
 #include <Logging.h>
 #include <Memory.h>
-#include <PersistableStore.h>
 #include <TrustedTime.h>
-#include <Utf8.h>
 #include <esp_mac.h>
 
 #include <algorithm>
@@ -20,18 +18,15 @@
 
 namespace {
 constexpr char LOG_PATH[] = "/.crosspoint/reading_sessions.jsonl";
-// Upload position in the log, kept per account so a new account receives the whole history.
-constexpr char STATE_PATH[] = "/.crosspoint/reading_sessions_sync.json";
+constexpr char TMP_PATH[] = "/.crosspoint/reading_sessions.tmp";
 
 constexpr size_t BATCH_SIZE = 20;  // server limit per request
 // Bounds one manual sync to 200 sessions when a long history is first uploaded.
 constexpr size_t MAX_BATCHES = 10;
-constexpr size_t MAX_LINE = 512;
-constexpr int MAX_TITLE_BYTES = 80;
+constexpr size_t MAX_LINE = 160;
 
 // Server limits; a session outside them would make the server reject its whole batch.
 constexpr int64_t MIN_START = 946684800;  // 2000-01-01
-constexpr uint32_t MIN_SECONDS = 10;
 constexpr uint32_t MAX_SECONDS = 7 * 86400;
 constexpr int64_t MAX_FUTURE_SECONDS = 300;
 
@@ -77,18 +72,50 @@ void formatSessionId(char* out, const size_t size, const int64_t start, const ui
            mac[4], mac[5]);
 }
 
-bool saveOffset(const std::string& account, const size_t offset) {
-  JsonDocument state;
-  state["account"] = account;
-  state["offset"] = offset;
-  return PersistableStoreBase::writeDocToFile(STATE_PATH, state);
+// Writes the queue from offset onwards to a temporary file that replaces it.
+// A power cut between the two steps leaves the temporary file, which recover() restores.
+bool keepFrom(const size_t offset, char* buffer, const size_t size) {
+  HalFile source = Storage.open(LOG_PATH);
+  if (!source) return false;
+  const size_t total = source.size();
+  if (offset >= total) {
+    source.close();
+    return Storage.remove(LOG_PATH);
+  }
+  HalFile target = Storage.open(TMP_PATH, O_WRONLY | O_CREAT | O_TRUNC);
+  bool ok = target && source.seek(offset);
+  for (size_t done = offset; ok && done < total;) {
+    const int got = source.read(buffer, std::min(size, total - done));
+    ok = got > 0 && target.write(buffer, got) == static_cast<size_t>(got);
+    done += got > 0 ? got : 0;
+  }
+  source.close();
+  if (target) target.close();
+  if (!ok) {
+    Storage.remove(TMP_PATH);
+    LOG_ERR("RSL", "Failed to shorten the reading session queue");
+    return false;
+  }
+  return Storage.remove(LOG_PATH) && Storage.rename(TMP_PATH, LOG_PATH);
+}
+
+void recover() {
+  if (!Storage.exists(TMP_PATH)) return;
+  if (Storage.exists(LOG_PATH)) {
+    Storage.remove(TMP_PATH);
+  } else {
+    Storage.rename(TMP_PATH, LOG_PATH);
+  }
 }
 }  // namespace
 
-bool readingSessionLog::append(const std::string& document, const std::string& bookPath, const std::string& title,
-                               const int64_t startTime, const uint32_t seconds, const uint16_t startProgressBp,
-                               const uint16_t endProgressBp) {
-  if (!isDocumentId(document.c_str())) return false;
+bool readingSessionLog::enabled() {
+  return KOREADER_STORE.hasCredentials() && KOREADER_STORE.getServerType() != KOReaderServerType::KOSYNC;
+}
+
+bool readingSessionLog::append(const std::string& document, const int64_t startTime, const uint32_t seconds,
+                               const uint16_t startProgressBp, const uint16_t endProgressBp) {
+  if (!isDocumentId(document.c_str()) || seconds < MIN_SECONDS) return false;
   JsonDocument doc;
   doc["doc"] = document;
   doc["start"] = startTime;
@@ -96,28 +123,39 @@ bool readingSessionLog::append(const std::string& document, const std::string& b
   doc["tz"] = utcOffsetMinutes(static_cast<time_t>(startTime));
   doc["from"] = startProgressBp;
   doc["to"] = endProgressBp;
-  doc["title"] = title.substr(0, utf8SafeTruncateBuffer(title.data(), std::min<int>(title.size(), MAX_TITLE_BYTES)));
-  doc["path"] = bookPath;
-  // One spare byte in front for a newline that ends an unfinished line already in the log.
+  // One spare byte in front for a newline that ends an unfinished line already in the queue.
   const auto buffer = makeUniqueNoThrow<char[]>(MAX_LINE + 2);
   if (!buffer) return false;
   char* line = buffer.get() + 1;
   size_t length = SyncRequest::serialize(doc, line, MAX_LINE);
-  if (length == 0) {
-    // upload() skips lines longer than its buffer, so a very long path is left out.
-    doc.remove("path");
-    length = SyncRequest::serialize(doc, line, MAX_LINE);
-  }
   if (length == 0) return false;
   line[length++] = '\n';
 
   Storage.mkdir("/.crosspoint");
+  recover();
   HalFile file = Storage.open(LOG_PATH, O_RDWR | O_CREAT | O_APPEND);
   if (!file) {
-    LOG_ERR("RSL", "Failed to open the reading session log");
+    LOG_ERR("RSL", "Failed to open the reading session queue");
     return false;
   }
-  const size_t sizeBefore = file.size();
+  size_t sizeBefore = file.size();
+  if (sizeBefore + length + 1 > MAX_QUEUE_BYTES) {
+    // Full: drop the oldest sessions until this one fits.
+    size_t drop = 0;
+    while (sizeBefore - drop + length + 1 > MAX_QUEUE_BYTES && readLine(file, drop, line, MAX_LINE + 1)) {
+    }
+    if (sizeBefore - drop + length + 1 > MAX_QUEUE_BYTES) drop = sizeBefore;
+    file.close();
+    LOG_INF("RSL", "Session queue full; dropping %u bytes of old sessions", static_cast<unsigned>(drop));
+    // The line was overwritten while scanning; build it again after shortening.
+    if (!keepFrom(drop, line, MAX_LINE)) return false;
+    length = SyncRequest::serialize(doc, line, MAX_LINE);
+    if (length == 0) return false;
+    line[length++] = '\n';
+    file = Storage.open(LOG_PATH, O_RDWR | O_CREAT | O_APPEND);
+    if (!file) return false;
+    sizeBefore = file.size();
+  }
   // A power cut can leave an unfinished line, which would swallow this record.
   char last = '\n';
   if (sizeBefore > 0 && file.seek(sizeBefore - 1)) file.read(&last, 1);
@@ -129,25 +167,17 @@ bool readingSessionLog::append(const std::string& document, const std::string& b
   // A partial line would swallow the next session appended after it.
   if (!written) file.truncate(sizeBefore);
   file.close();
-  if (!written) LOG_ERR("RSL", "Failed to append a reading session");
+  if (!written) LOG_ERR("RSL", "Failed to queue a reading session");
   return written;
 }
 
 bool readingSessionLog::upload(SyncRequest& sync) {
+  recover();
   if (!Storage.exists(LOG_PATH)) return true;
   HalFile file = Storage.open(LOG_PATH);
   if (!file) return false;
-
-  const std::string account = SyncRequest::account();
+  // End of the last batch the server accepted. Lines before it are removed afterwards.
   size_t offset = 0;
-  {
-    JsonDocument state;
-    if (PersistableStoreBase::readDocFromFile(STATE_PATH, state) && account == (state["account"] | "")) {
-      offset = state["offset"] | static_cast<size_t>(0);
-    }
-  }
-  // A log that shrank was replaced; start over. The server ignores sessions it already holds.
-  if (offset > file.size()) offset = 0;
 
   uint8_t mac[6] = {};
   esp_efuse_mac_get_default(mac);
@@ -180,7 +210,7 @@ bool readingSessionLog::upload(SyncRequest& sync) {
       const char* document = entry["doc"] | "";
       const int64_t start = entry["start"] | static_cast<int64_t>(0);
       const uint32_t seconds = entry["secs"] | static_cast<uint32_t>(0);
-      // A session dated in the future was measured with a wrong clock; it stays in the log only.
+      // A session the server would reject (for example a wrong clock) is dropped with its batch.
       if (!isDocumentId(document) || start < MIN_START || seconds < MIN_SECONDS || seconds > MAX_SECONDS ||
           (now > 0 && start + seconds > now + MAX_FUTURE_SECONDS) ||
           std::find(starts, starts + count, start) != starts + count) {
@@ -216,12 +246,12 @@ bool readingSessionLog::upload(SyncRequest& sync) {
         break;
       }
     }
-    if (consumed != offset) {
-      offset = consumed;
-      ok = saveOffset(account, offset);
-    }
+    offset = consumed;
     if (endOfLog) break;
   }
   file.close();
+  // An unfinished last line stays for the next session's append to close.
+  // The request buffer is free now and copies the rest in a few large writes.
+  if (offset > 0 && !keepFrom(offset, sync.body(), SyncRequest::BUFFER_SIZE)) ok = false;
   return ok;
 }

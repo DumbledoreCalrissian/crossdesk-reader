@@ -28,6 +28,9 @@ class EpubReaderActivity final : public ReaderActivity {
   int statisticsSpine = -1;
   int statisticsPage = -1;
   bool sleepPrepared = false;
+  int sessionStartProgressBp = -1;
+  // Queues this visit's EPUB reading time for CrossPoint Sync, once.
+  void queueReadingSession();
   void pauseStatistics();
   bool isEpubBook() const;
   std::unique_ptr<Epub::SyncMetadata> vocabularyMetadata;

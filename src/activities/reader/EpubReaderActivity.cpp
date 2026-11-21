@@ -59,6 +59,7 @@
 #include "clippings/ClippingsManager.h"
 #include "components/UITheme.h"
 #include "fontIds.h"
+#include "sync/ReadingSessionLog.h"
 #include "sync/SyncEngine.h"
 #include "util/BookmarkUtil.h"
 #include "util/ButtonNavigator.h"
@@ -251,12 +252,27 @@ void EpubReaderActivity::onCovered() {
 void EpubReaderActivity::onExit() {
   sleepPrepared = true;
   if (readingStatistics) readingStatistics->stop(millis());
+  queueReadingSession();
   ReaderActivity::onExit();
+}
+
+void EpubReaderActivity::queueReadingSession() {
+  if (!readingStatistics) return;
+  const EpubReadingStats::Session session = readingStatistics->takeSession();
+  if (session.seconds < readingSessionLog::MIN_SECONDS || !epub || !readingSessionLog::enabled()) return;
+  const int64_t now = trustedtime::trustedNow();
+  if (now <= 0) return;  // no trusted clock: the server could not place the session
+  const int64_t start = now - static_cast<int64_t>((millis() - session.startedAt) / 1000);
+  const std::string document = syncEngine::documentId(epub->getPath());
+  readingSessionLog::append(document, start, session.seconds,
+                            static_cast<uint16_t>(std::clamp(sessionStartProgressBp, 0, 10000)),
+                            static_cast<uint16_t>(std::clamp(getProgressBasisPoints(), 0, 10000)));
 }
 
 void EpubReaderActivity::prepareForSleep() {
   sleepPrepared = true;
   if (readingStatistics) readingStatistics->stop(millis());
+  queueReadingSession();
   ReaderActivity::prepareForSleep();
   if (!epub || !KOREADER_STORE.getSyncOnSleep() || !KOREADER_STORE.hasCredentials()) return;
   // Sync On Sleep runs after this activity is gone, so hand over the position now.
@@ -2153,6 +2169,7 @@ void EpubReaderActivity::renderBook() {
         showClippingMessage || syncErrorShown) {
       readingStatistics->pause(millis());
     } else {
+      if (sessionStartProgressBp < 0) sessionStartProgressBp = getProgressBasisPoints();
       readingStatistics->pageShown(millis(),
                                    statisticsSpine == currentSpineIndex && statisticsPage == section->currentPage);
     }

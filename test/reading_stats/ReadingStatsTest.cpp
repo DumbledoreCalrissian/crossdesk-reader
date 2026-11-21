@@ -524,6 +524,29 @@ TEST_F(EpubStatistics, DeterministicSequencePersistsAfterRestart) {
   EXPECT_EQ(restarted.totals(), stats.totals());
 }
 
+TEST_F(EpubStatistics, SessionMatchesCountedTimeAndIsTakenOnce) {
+  {
+    EpubReadingStats earlier(BOOK, 0);
+    earlier.pageShown(0);
+    successfulDeparture(earlier, 5000, Departure::ForwardTurn);
+    earlier.stop(5000);
+  }
+  EpubReadingStats stats(BOOK, 0);
+  EXPECT_EQ(stats.takeSession().seconds, 0u);  // nothing counted, not stopped
+  stats.pageShown(10000);
+  successfulDeparture(stats, 14000, Departure::ForwardTurn);
+  stats.pageShown(15000);
+  stats.pause(20000);  // menu time is not reading
+  stats.pageShown(80000);
+  stats.stop(86500);
+  const auto session = stats.takeSession();
+  EXPECT_EQ(session.startedAt, 10000u);
+  // The book's earlier total is not part of this visit.
+  EXPECT_EQ(session.seconds, (stats.totals().readingMilliseconds - 5000) / 1000);
+  EXPECT_EQ(session.seconds, 15u);
+  EXPECT_EQ(stats.takeSession().seconds, 0u);  // onExit after prepareForSleep
+}
+
 TEST_F(EpubStatistics, CheckpointSettledTotalsOnlyAndThrottleAttempts) {
   EpubReadingStats stats(BOOK, 0);
   stats.pageShown(0);
