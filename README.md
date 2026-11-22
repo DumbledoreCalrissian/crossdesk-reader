@@ -68,7 +68,6 @@ The calendar opens monthly Statistics, and the weather widget opens Weather:
 
 <p align="center">
   <img src="docs/images/screenshots/todo.png" alt="Todo list with priority and date marks" width="200">
-  <img src="docs/images/screenshots/todo-edit.png" alt="Todo edit screen with due-date controls" width="200">
   <img src="docs/images/screenshots/pomodoro.png" alt="Pomodoro timer" width="200">
   <img src="docs/images/screenshots/sudoku-game.png" alt="Sudoku game with notes, undo, check and reveal" width="200">
   <img src="docs/images/screenshots/t9-keypad.png" alt="T9 keypad while typing a new Todo task" width="200">
