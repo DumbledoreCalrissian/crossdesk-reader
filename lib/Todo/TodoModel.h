@@ -32,6 +32,7 @@ class TodoModel {
   bool appendLoaded(uint32_t id, bool completed, std::string_view text);
   bool setNextId(uint32_t id);
   static bool validText(std::string_view text);
+  static bool blank(std::string_view text) { return trimmed(text).empty(); }
   uint32_t checksum(uint32_t generation) const;
 
  private:

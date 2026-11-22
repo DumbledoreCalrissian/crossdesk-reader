@@ -5,6 +5,7 @@
 #include <Memory.h>
 
 #include <algorithm>
+#include <array>
 #include <bit>
 #include <cstdio>
 
@@ -17,6 +18,16 @@
 
 namespace fui = freeink::ui;
 
+namespace {
+// Keeps the icon slot on unselected delete rows so their text does not shift.
+constexpr auto BLANK_BITS = [] {
+  std::array<uint8_t, 24 * 24 / 8> bits{};
+  bits.fill(0xFF);
+  return bits;
+}();
+const freeink::Icon BLANK_ICON = {24, 24, 0, BLANK_BITS.data()};
+}  // namespace
+
 void TodoActivity::onEnter() {
   UiListActivity::onEnter();
   {
@@ -26,12 +37,55 @@ void TodoActivity::onEnter() {
   app.on(ACTION_BACK, action, this);
   app.on(ACTION_CHECK, action, this);
   app.on(ACTION_DELETE_MODE, action, this);
-  app.on(ACTION_DELETE_SELECTED, action, this);
+  app.on(ACTION_DELETE_BAR, action, this);
 }
 
 int TodoActivity::listCount() const { return static_cast<int>(store.model().size()) + (view == View::Tasks ? 1 : 0); }
 
 unsigned TodoActivity::selectedCount() const { return std::popcount(selection); }
+
+uint32_t TodoActivity::allMask() const {
+  const auto size = store.model().size();
+  return size >= 32 ? UINT32_MAX : (uint32_t{1} << size) - 1;
+}
+
+// Rows list open tasks first, then completed ones; both keep saved order.
+int TodoActivity::modelIndex(int row) const {
+  const auto& model = store.model();
+  for (const bool completed : {false, true})
+    for (size_t i = 0; i < model.size(); ++i)
+      if (model.at(i)->completed == completed && row-- == 0) return static_cast<int>(i);
+  return -1;
+}
+
+int TodoActivity::rowOf(size_t index) const {
+  const auto& model = store.model();
+  const bool completed = model.at(index)->completed;
+  int row = 0;
+  for (size_t i = 0; i < model.size(); ++i) {
+    const bool other = model.at(i)->completed;
+    if (other == completed ? i < index : !other) ++row;
+  }
+  return row;
+}
+
+void TodoActivity::selectDone() {
+  {
+    RenderLock lock(*this);
+    selection = 0;
+    for (size_t i = 0; i < store.model().size(); ++i)
+      if (store.model().at(i)->completed) selection |= uint32_t{1} << i;
+  }
+  requestUpdate();
+}
+
+void TodoActivity::selectAll() {
+  {
+    RenderLock lock(*this);
+    selection = selection == allMask() ? 0 : allMask();
+  }
+  requestUpdate();
+}
 
 void TodoActivity::action(const fui::ActionEvent& event, void* context) {
   auto* self = static_cast<TodoActivity*>(context);
@@ -46,8 +100,18 @@ void TodoActivity::action(const fui::ActionEvent& event, void* context) {
     case ACTION_DELETE_MODE:
       self->setView(View::DeleteSelection);
       break;
-    case ACTION_DELETE_SELECTED:
-      self->confirmDelete();
+    case ACTION_DELETE_BAR:
+      switch (event.value) {
+        case DELETE_SELECTED:
+          self->confirmDelete();
+          break;
+        case SELECT_DONE:
+          self->selectDone();
+          break;
+        case SELECT_ALL:
+          self->selectAll();
+          break;
+      }
       break;
   }
 }
@@ -83,19 +147,31 @@ void TodoActivity::provideRow(void* context, uint16_t index, fui::ListItem& item
     item.label = tr(STR_TODO_NEW);
     return;
   }
-  const auto taskIndex = self.view == View::Tasks ? index - 1 : index;
+  const int taskIndex = self.modelIndex(self.view == View::Tasks ? index - 1 : index);
+  if (taskIndex < 0) return;
   const auto* task = self.store.model().at(taskIndex);
   if (!task) return;
   item.label = task->text;
-  item.checkbox = true;
-  item.checked = self.view == View::Tasks ? task->completed : (self.selection & (uint32_t{1} << taskIndex));
-  item.strikethrough = self.view == View::Tasks && task->completed;
+  item.strikethrough = task->completed;
+  if (self.view == View::Tasks) {
+    item.checkbox = true;
+    item.checked = task->completed;
+  } else {
+    // A bin, not a checkbox, so selection does not look like "done".
+    const bool selected = self.selection & (uint32_t{1} << taskIndex);
+    item.icon = fui::bitmapFromIcon(selected ? icon_trash_2_24 : BLANK_ICON);
+  }
 }
 
 void TodoActivity::buildHeader(UiScreen& screen) {
   fui::HeaderProps header;
-  const auto band = prepareUiHeader(screen, renderer, header,
-                                    view == View::Tasks ? tr(STR_TODO) : tr(STR_TODO_DELETE_TITLE), ACTION_BACK);
+  const char* title = tr(STR_TODO_DELETE_TITLE);
+  if (view == View::Tasks) {
+    std::snprintf(titleLabel, sizeof(titleLabel), tr(STR_TODO_COUNT), static_cast<unsigned>(store.model().size()),
+                  static_cast<unsigned>(TodoModel::MAX_TASKS));
+    title = titleLabel;
+  }
+  const auto band = prepareUiHeader(screen, renderer, header, title, ACTION_BACK);
   if (view == View::Tasks) {
     header.trailingIcon = fui::bitmapFromIcon(icon_trash_2_32);
     header.trailingAction = ACTION_DELETE_MODE;
@@ -116,11 +192,29 @@ void TodoActivity::buildScreen(UiScreen& screen) {
     std::snprintf(deleteLabel, sizeof(deleteLabel), tr(STR_TODO_DELETE_SELECTED), selectedCount());
     fui::ButtonProps button;
     button.label = deleteLabel;
-    button.action = ACTION_DELETE_SELECTED;
+    button.action = ACTION_DELETE_BAR;
+    button.value = DELETE_SELECTED;
     button.enabled = selection != 0 && store.canEdit();
     const int16_t inset = static_cast<int16_t>(theme.spaceLg * 2);
     const auto rect = screen.takeBottom(theme.rowHeight, theme.spaceLg).inset(fui::Insets{0, inset, 0, inset});
     screen.button(button, rect);
+
+    const auto row = screen.takeBottom(theme.rowHeight, theme.spaceLg).inset(fui::Insets{0, inset, 0, inset});
+    const int16_t half = static_cast<int16_t>((row.width - theme.spaceLg) / 2);
+    fui::ButtonProps done;
+    done.label = tr(STR_TODO_SELECT_DONE);
+    done.action = ACTION_DELETE_BAR;
+    done.value = SELECT_DONE;
+    done.enabled = false;
+    for (size_t i = 0; i < store.model().size(); ++i) done.enabled |= store.model().at(i)->completed;
+    done.enabled &= store.canEdit();
+    screen.button(done, fui::Rect{row.x, row.y, half, row.height});
+    fui::ButtonProps all;
+    all.label = selection && selection == allMask() ? tr(STR_TODO_SELECT_NONE) : tr(STR_TODO_SELECT_ALL);
+    all.action = ACTION_DELETE_BAR;
+    all.value = SELECT_ALL;
+    all.enabled = store.canEdit() && store.model().size();
+    screen.button(all, fui::Rect{static_cast<int16_t>(row.x + row.width - half), row.y, half, row.height});
   }
   if (const char* error = statusText()) {
     fui::TextAreaProps text;
@@ -163,10 +257,10 @@ void TodoActivity::toggleTask(int index) {
   {
     RenderLock lock(*this);
     if (view != View::Tasks) return;
-    const auto* task = store.model().at(index);
-    if (!task) return;
-    nav.selected = index + 1;
-    status = store.change(TodoStore::Change::Toggle, task->id);
+    const int taskIndex = modelIndex(index);
+    if (taskIndex < 0) return;
+    status = store.change(TodoStore::Change::Toggle, store.model().at(taskIndex)->id);
+    nav.selected = rowOf(taskIndex) + 1;
   }
   requestUpdate();
 }
@@ -179,15 +273,16 @@ void TodoActivity::activateIndex(int index) {
         enterText(0);
         return;
       }
-      const auto* task = store.model().at(index - 1);
-      if (task) enterText(task->id);
+      const int taskIndex = modelIndex(index - 1);
+      if (taskIndex >= 0) enterText(store.model().at(taskIndex)->id);
       return;
     }
     case View::DeleteSelection: {
-      if (index < 0 || !store.model().at(index)) return;
+      const int taskIndex = modelIndex(index);
+      if (taskIndex < 0) return;
       {
         RenderLock lock(*this);
-        selection ^= uint32_t{1} << index;
+        selection ^= uint32_t{1} << taskIndex;
       }
       requestUpdate();
       return;
@@ -223,12 +318,38 @@ void TodoActivity::enterText(uint32_t id) {
 }
 
 void TodoActivity::acceptText(uint32_t id, const std::string& text) {
+  // Saving an existing task with no text offers to delete it.
+  if (id && TodoModel::blank(text)) {
+    confirmDeleteTask(id);
+    return;
+  }
   RenderLock lock(*this);
   status = store.change(id ? TodoStore::Change::Edit : TodoStore::Change::Add, id, text);
   if (status == TodoStore::Status::Ok && !id) {
     closeRouting();
-    nav.requestSelection(static_cast<int>(store.model().size()));
+    nav.requestSelection(rowOf(store.model().size() - 1) + 1);
   }
+}
+
+void TodoActivity::confirmDeleteTask(uint32_t id) {
+  const auto* task = store.model().find(id);
+  if (!task) return;
+  auto confirmation = makeUniqueNoThrow<ConfirmationActivity>(renderer, mappedInput, tr(STR_TODO_DELETE_ONE_CONFIRM),
+                                                              task->text, tr(STR_CANCEL), tr(STR_TODO_DELETE));
+  if (!confirmation) {
+    LOG_ERR("TODO", "Confirmation allocation failed: %u bytes", static_cast<unsigned>(sizeof(ConfirmationActivity)));
+    {
+      RenderLock lock(*this);
+      status = TodoStore::Status::OutOfMemory;
+    }
+    requestUpdate();
+    return;
+  }
+  startActivityForResult(std::move(confirmation), [this, id](const ActivityResult& result) {
+    if (result.isCancelled) return;
+    RenderLock lock(*this);
+    status = store.eraseTasks(&id, 1);
+  });
 }
 
 void TodoActivity::confirmDelete() {

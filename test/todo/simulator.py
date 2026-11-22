@@ -44,7 +44,7 @@ def seed(sd, tasks):
         version=1, generation=1, nextId=len(tasks) + 1, checksum=checksum, tasks=tasks)))
 
 
-home = '0:WAIT:Entering activity: Home;400:TAP:180,562;400:WAIT:Entering activity: Todo;'
+home = '0:WAIT:Entering activity: Home;400:TAP:330,395;400:WAIT:Entering activity: Todo;'
 with tempfile.TemporaryDirectory(prefix='checkbox-workflow-', dir=artifacts) as directory:
     sd = Path(directory)
     run('create', home + '300:WAIT:SCREEN:.*No tasks yet;400:TAP:180,130;400:WAIT:Entering activity: KeyboardEntry;'
@@ -112,4 +112,40 @@ with tempfile.TemporaryDirectory(prefix='checkbox-wrapped-', dir=artifacts) as d
     sd = Path(directory)
     seed(sd, [dict(id=1, completed=True, text='Completed task with a description long enough to wrap across two lines and truncate at the visible boundary. Café 日本語')])
     run('wrapped-strike', home + '300:SHOT:' + str(artifacts/'todo-wrapped-strike.bmp') + ';600:QUIT', sd)
-print('Todo checkbox workflows passed: direct edit, complete/incomplete, cancel, batch delete, cross-page selection, persistence, Home')
+mixed = [dict(id=i + 1, completed=i % 2 == 0, text=f'Task {i + 1}') for i in range(4)]
+with tempfile.TemporaryDirectory(prefix='todo-order-', dir=artifacts) as directory:
+    sd = Path(directory)
+    seed(sd, mixed)
+    # Open tasks come first; row 4 is the completed Task 1, so its checkbox reopens id 1.
+    run('open-first', home + '300:WAIT:SCREEN:.*Todo \\(4/32\\) \\| New task \\| Task 2 \\| Task 4 \\| Task 1 \\| Task 3;'
+        '300:TAP:55,324;700:WAIT:SCREEN:.*New task \\| Task 1 \\| Task 2 \\| Task 4 \\| Task 3;300:QUIT', sd)
+    saved = latest(sd)
+    assert [t['completed'] for t in saved['tasks']] == [False, False, True, False]
+    assert [t['id'] for t in saved['tasks']] == [1, 2, 3, 4] and saved['generation'] == 2
+
+with tempfile.TemporaryDirectory(prefix='todo-select-', dir=artifacts) as directory:
+    sd = Path(directory)
+    seed(sd, mixed)
+    before = latest(sd)
+    run('select-all-none', home + '300:TAP:440,50;300:WAIT:SCREEN:.*Delete tasks;300:TAP:346,682;'
+        '600:WAIT:SCREEN:.*Select none \\| Delete selected \\(4\\);300:TAP:346,682;'
+        '600:WAIT:SCREEN:.*Select all \\| Delete selected \\(0\\);300:QUIT', sd)
+    assert latest(sd) == before
+    run('select-done', home + '300:TAP:440,50;300:WAIT:SCREEN:.*Delete tasks;300:TAP:133,682;'
+        '600:WAIT:Delete selected \\(2\\);300:TAP:240,765;300:WAIT:Entering activity: Confirmation;'
+        '300:TAP:240,475;700:WAIT:SCREEN:.*Todo \\(2/32\\);300:QUIT', sd)
+    assert [t['id'] for t in latest(sd)['tasks']] == [2, 4]
+
+with tempfile.TemporaryDirectory(prefix='todo-empty-edit-', dir=artifacts) as directory:
+    sd = Path(directory)
+    seed(sd, mixed)
+    clear = '300:TAP:180,200;300:WAIT:Entering activity: KeyboardEntry;' + ''.join(f'{300 * n}:TAP:432,693;' for n in range(1, 7)) + '2100:TAP:420,754;'
+    before = latest(sd)
+    run('empty-edit-cancel', home + clear + '300:WAIT:Entering activity: Confirmation;300:TAP:240,412;'
+        '700:WAIT:SCREEN:.*Todo \\(4/32\\);300:QUIT', sd)
+    assert latest(sd) == before
+    run('empty-edit-delete', home + clear + '300:WAIT:SCREEN:.*Delete this task\\?.*Task 2;300:TAP:240,475;'
+        '700:WAIT:SCREEN:.*Todo \\(3/32\\);300:QUIT', sd)
+    assert [t['id'] for t in latest(sd)['tasks']] == [1, 3, 4]
+
+print('Todo checkbox workflows passed: direct edit, complete/incomplete, cancel, batch delete, cross-page selection, persistence, Home, order, select done/all, empty-edit delete')
