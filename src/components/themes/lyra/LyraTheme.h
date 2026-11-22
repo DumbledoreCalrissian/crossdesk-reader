@@ -84,6 +84,8 @@ constexpr ThemeMetrics values = {.batteryWidth = 16,
 
 class LyraTheme : public BaseTheme {
  public:
+  // 32 px main-menu icon, or nullptr when the icon has none.
+  static const uint8_t* menuIcon(UIIcon icon);
   // Component drawing methods
   void fillBatteryIcon(const GfxRenderer& renderer, Rect rect, uint16_t percentage) const override;
   void drawSubHeader(const GfxRenderer& renderer, Rect rect, const char* label,

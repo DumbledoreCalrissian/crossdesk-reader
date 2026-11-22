@@ -5,8 +5,6 @@
 #include <I18n.h>
 #include <Logging.h>
 #include <Memory.h>
-#include <TodoOrder.h>
-#include <TodoStore.h>
 #include <TrustedTime.h>
 
 #include <algorithm>
@@ -14,10 +12,11 @@
 #include <string>
 
 #include "HapticFeedback.h"
+#include "HomeAppMenu.h"
 #include "HomeMenuOrder.h"
+#include "HomeReadingCalendar.h"
 #include "MappedInputManager.h"
 #include "RecentBooksStore.h"
-#include "components/TodoPresentation.h"
 #include "components/UITheme.h"
 #include "components/WeatherPresentation.h"
 #include "components/icons/clock.h"
@@ -47,9 +46,6 @@ constexpr int STAT_ICON = 24;
 constexpr int ICON_GAP = 4;
 constexpr int STAT_MIN_GAP = 8;  // between the time and the pages-turned group
 constexpr int DOT_SIZE = 8;
-constexpr int TODO_ROW_MIN_HEIGHT = 24;
-constexpr int TODO_TEXT_INSET = 16;
-constexpr int TODO_GAP = 4;
 constexpr int CHEVRON_INSET = 10;
 constexpr int CHEVRON_RESERVE = 24;
 constexpr int LOWER_BAND_GAP = 12;  // between Todo and the calendar/Weather band
@@ -130,67 +126,6 @@ void drawProgress(const GfxRenderer& renderer, const int fontId, const EpdFontFa
   if (filled > 0) renderer.fillRect(barX, barY, filled, barHeight, true);
 }
 
-HomeMenuItem deskMenuItemAt(int index, HomeMenuItem slot) {
-  int count = 0;
-  while (homeMenuItemAt(count, slot) != HomeMenuItem::NONE) ++count;
-  if (index == count) return HomeMenuItem::WEATHER;
-  return homeMenuItemAt(index, slot);
-}
-
-const char* itemLabel(const HomeMenuItem item) {
-  switch (item) {
-    case HomeMenuItem::WEATHER:
-      return tr(STR_WEATHER);
-    case HomeMenuItem::STATISTICS:
-      return tr(STR_STATS_TITLE);
-    case HomeMenuItem::FILE_BROWSER:
-      return tr(STR_BROWSE_FILES);
-    case HomeMenuItem::LIBRARY:
-      return tr(STR_LIBRARY);
-    case HomeMenuItem::PLUGINS:
-      return tr(STR_PLUGINS);
-    case HomeMenuItem::OPDS_BROWSER:
-      return tr(STR_OPDS_BROWSER);
-    case HomeMenuItem::SETTINGS_MENU:
-      return tr(STR_SETTINGS_TITLE);
-    case HomeMenuItem::TODO:
-      return tr(STR_TODO);
-    case HomeMenuItem::POMODORO:
-      return tr(STR_POMODORO);
-    case HomeMenuItem::SUDOKU:
-      return tr(STR_SUDOKU);
-    default:
-      return "";
-  }
-}
-
-UIIcon itemIcon(const HomeMenuItem item) {
-  switch (item) {
-    case HomeMenuItem::FILE_BROWSER:
-      return Folder;
-    case HomeMenuItem::LIBRARY:
-      return Library;
-    case HomeMenuItem::PLUGINS:
-      return Plugins;
-    case HomeMenuItem::OPDS_BROWSER:
-      return Book;
-    case HomeMenuItem::SETTINGS_MENU:
-      return Settings;
-    case HomeMenuItem::TODO:
-      return Todo;
-    case HomeMenuItem::POMODORO:
-      return Pomodoro;
-    case HomeMenuItem::SUDOKU:
-      return Sudoku;
-    case HomeMenuItem::WEATHER:
-      return Weather;
-    case HomeMenuItem::STATISTICS:
-      return Statistics;
-    default:
-      return None;
-  }
-}
-
 bool contains(const Rect& r, const int x, const int y) {
   return x >= r.x && x < r.x + r.width && y >= r.y && y < r.y + r.height;
 }
@@ -214,47 +149,14 @@ void DeskHomeUi::begin(const HomeMenuItem slotItem, const std::vector<RecentBook
 Rect DeskHomeUi::todoRect() const {
   const auto layout = bookLayout(renderer);
   const int lineH = renderer.getLineHeight(SMALL_FONT_ID);
-  const int rowH = std::max(lineH, TODO_ROW_MIN_HEIGHT);
+  const int rowH = HomeTodoPreview::rowHeight(renderer);
   return Rect{layout.stripX, stripBarY(renderer, layout) + lineH + 12 + DOT_SIZE + TEXT_GAP,
               STRIP_PAGE * layout.smallW + (STRIP_PAGE - 1) * SMALL_GAP,
-              renderer.getLineHeight(UI_10_FONT_ID) + TODO_GAP + 1 + TODO_GAP + static_cast<int>(TODO_ROWS) * rowH};
+              renderer.getLineHeight(UI_10_FONT_ID) + 2 * HomeTodoPreview::GAP + 1 +
+                  static_cast<int>(HomeTodoPreview::ROWS) * rowH};
 }
 
-void DeskHomeUi::loadTodo() {
-  todoCount = 0;
-  todoAvailable = false;
-  auto store = makeUniqueNoThrow<TodoStore>();
-  if (!store) {
-    LOG_ERR("HOME", "OOM: Todo snapshot (%u bytes)", static_cast<unsigned>(sizeof(TodoStore)));
-    return;
-  }
-  // load() only reads snapshots; Todo owns edits and persistence.
-  if (store->load() != TodoStore::Status::Ok) {
-    LOG_ERR("HOME", "Todo snapshot load failed");
-    return;
-  }
-  todoAvailable = true;
-  const int markerWidth = std::max(TODO_TEXT_INSET, renderer.getTextWidth(SMALL_FONT_ID, "!!!") + TODO_GAP);
-  const int textWidth = todoRect().width - markerWidth;
-  TodoOrder order;
-  order.reset(store->model());
-  const int32_t today = todoToday();
-  for (size_t row = 0; row < store->model().size() && todoCount < TODO_ROWS; ++row) {
-    const int index = order.modelIndex(store->model(), row);
-    if (index < 0) break;
-    const auto& task = *store->model().at(index);
-    if (task.completed) break;
-    todoPriorities[todoCount] = task.priority;
-    formatTodoShortDate(task.due, todoDueTexts[todoCount], sizeof(todoDueTexts[todoCount]));
-    const int dateWidth = renderer.getTextWidth(SMALL_FONT_ID, todoDueTexts[todoCount]);
-    const int room = textWidth - (dateWidth ? dateWidth + TODO_GAP : 0);
-    const char* prefix = todoOverdue(task, today) && room >= 100 ? "* " : "";
-    const auto text = renderer.truncatedText(SMALL_FONT_ID, task.text,
-                                             std::max(0, room - renderer.getTextWidth(SMALL_FONT_ID, prefix)));
-    snprintf(todoTexts[todoCount], sizeof(todoTexts[todoCount]), "%s%s", prefix, text.c_str());
-    ++todoCount;
-  }
-}
+void DeskHomeUi::loadTodo() { todo.load(renderer, todoRect().width); }
 
 bool DeskHomeUi::todoTapped() const {
   const auto rect = todoRect();
@@ -265,38 +167,14 @@ bool DeskHomeUi::todoTapped() const {
 
 void DeskHomeUi::drawTodo() const {
   const auto rect = todoRect();
-  const int lineH = renderer.getLineHeight(SMALL_FONT_ID);
-  const int rowH = std::max(lineH, TODO_ROW_MIN_HEIGHT);
   renderer.drawText(UI_10_FONT_ID, rect.x, rect.y, tr(STR_TODO), true, EpdFontFamily::BOLD);
   drawWidgetChevron(renderer, rect);
-  const int ruleY = rect.y + renderer.getLineHeight(UI_10_FONT_ID) + TODO_GAP;
+  const int ruleY = rect.y + renderer.getLineHeight(UI_10_FONT_ID) + HomeTodoPreview::GAP;
   renderer.drawLine(rect.x, ruleY, rect.x + rect.width - 1, ruleY, true);
-  const int markerWidth = std::max(TODO_TEXT_INSET, renderer.getTextWidth(SMALL_FONT_ID, "!!!") + TODO_GAP);
-  for (size_t i = 0; i < todoCount; ++i) {
-    const int y = ruleY + 1 + TODO_GAP + static_cast<int>(i) * rowH;
-    const int textY = y + (rowH - lineH) / 2;
-    if (todoPriorities[i]) {
-      renderer.drawText(SMALL_FONT_ID, rect.x, textY, todoPriority(todoPriorities[i]), true);
-    } else {
-      renderer.fillRoundedRect(rect.x + 3, y + (rowH - 5) / 2, 5, 5, 2, Color::Black);
-    }
-    renderer.drawText(SMALL_FONT_ID, rect.x + markerWidth, textY, todoTexts[i], true);
-    const int dateWidth = renderer.getTextWidth(SMALL_FONT_ID, todoDueTexts[i]);
-    if (dateWidth) {
-      renderer.drawText(SMALL_FONT_ID, rect.x + rect.width - dateWidth, textY, todoDueTexts[i], true);
-    }
-  }
-  if (!todoCount) {
-    const char* text = todoAvailable ? tr(STR_TODO_NONE) : tr(STR_TODO_UNAVAILABLE);
-    renderer.drawText(SMALL_FONT_ID, rect.x, ruleY + 1 + TODO_GAP + (rowH - lineH) / 2, text, true);
-  }
+  todo.drawRows(renderer, rect.x, ruleY + 1 + HomeTodoPreview::GAP, rect.width);
 }
 
-int DeskHomeUi::itemCount() const {
-  int count = 0;
-  while (deskMenuItemAt(count, slot) != HomeMenuItem::NONE) ++count;
-  return count;
-}
+int DeskHomeUi::itemCount() const { return appMenuItemCount(slot); }
 
 void DeskHomeUi::openMenu() {
   open = true;
@@ -318,7 +196,7 @@ DeskHomeUi::Request DeskHomeUi::loopMenu(ButtonNavigator& navigator) {
     request = Request::Redraw;
   };
   const auto choose = [this](const int index) {
-    chosenItem = deskMenuItemAt(index, slot);
+    chosenItem = appMenuItemAt(index, slot);
     close();
     return Request::Open;
   };
@@ -382,8 +260,8 @@ void DeskHomeUi::draw(const bool buttonSelected, const bool hasBooks) const {
   const HomeMenuItem slotItem = slot;
   DeskTheme::drawHomeMenuPanel(
       renderer, DeskTheme::homeMenuPanelRect(renderer, count), count, input.hasConfirmButton() ? selected : -1,
-      [slotItem](const int i) { return std::string(itemLabel(deskMenuItemAt(i, slotItem))); },
-      [slotItem](const int i) { return itemIcon(deskMenuItemAt(i, slotItem)); });
+      [slotItem](const int i) { return std::string(appMenuLabel(appMenuItemAt(i, slotItem))); },
+      [slotItem](const int i) { return appMenuIcon(appMenuItemAt(i, slotItem)); });
 }
 
 const char* DeskHomeUi::backHint(const bool hasBooks) const {
@@ -529,25 +407,22 @@ void DeskHomeUi::drawBooks(const int selectorIndex) {
 }
 
 void DeskHomeUi::loadCalendar() {
-  calendarState = CalendarState::NoClock;
   tm date{};
-  const auto local = readingcalendar::localMilliseconds(&date);
-  if (!local) return;
-  calendarState = CalendarState::Unavailable;
-  auto ledger = makeUniqueNoThrow<readingcalendar::Store>();
-  if (!ledger) {
-    LOG_ERR("HOME", "OOM: calendar (%u bytes)", unsigned(sizeof(readingcalendar::Store)));
-    return;
+  int32_t today = 0;
+  std::unique_ptr<readingcalendar::Store> ledger;
+  switch (homecalendar::load(ledger, date, today)) {
+    case homecalendar::State::NoClock:
+      calendarState = CalendarState::NoClock;
+      return;
+    case homecalendar::State::ClockBehind:
+      calendarState = CalendarState::ClockBehind;
+      return;
+    case homecalendar::State::Unavailable:
+      calendarState = CalendarState::Unavailable;
+      return;
+    case homecalendar::State::Ready:
+      break;
   }
-  ledger->load();
-  const auto today = int32_t(local / readingcalendar::Model::MAX_DAY_MS);
-  if (!ledger->canSave()) return;
-  if (today < ledger->model().latestDay()) {
-    calendarState = CalendarState::ClockBehind;
-    return;
-  }
-  // Only the temporary display model changes here. Home never saves a ledger.
-  ledger->model().changeGoal(today, readingcalendar::GOALS[ledger->goalIndex()]);
   const int year = date.tm_year + 1900;
   const int month = date.tm_mon + 1;
   const auto first = readingcalendar::civilDay(year, month, 1);

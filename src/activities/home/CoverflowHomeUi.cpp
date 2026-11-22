@@ -18,15 +18,14 @@ constexpr int COVER_W = 372;
 constexpr int COVER_H = 520;
 // Neighbours stand on the centre cover's floor line, one gap away from it.
 constexpr int SIDE_H = 450;
-constexpr int SIDE_GAP = 12;
-// Floor shadow below each cover: a solid contact line, then a dithered band
-// that fades and widens downward.
-constexpr int SHADOW_H = 34;
-constexpr int SIDE_SHADOW_H = 22;
-constexpr int CONTACT_H = 2;
-constexpr int SHADOW_START_DENSITY = 10;  // of 16, at the contact line
-// 4x4 ordered-dither thresholds.
-constexpr uint8_t BAYER[4][4] = {{0, 8, 2, 10}, {12, 4, 14, 6}, {3, 11, 1, 9}, {15, 7, 13, 5}};
+// Wider than the halo so it never reaches a neighbour.
+constexpr int SIDE_GAP = 20;
+// Dithered halo around the centre cover only.
+constexpr int HALO_BANDS = 4;
+constexpr int HALO_BAND_W = 4;
+static_assert(HALO_BANDS * HALO_BAND_W < SIDE_GAP);
+// Room for the sheet arrow under the coverflow.
+constexpr int ARROW_BAND = 56;
 // Taps at y < 44 open the frontlight panel (ActivityManager).
 constexpr int TOP_RESERVE = 44;
 constexpr int BUTTON_W = 200;
@@ -37,8 +36,10 @@ constexpr int TEXT_INSET = 32;
 constexpr int GAP = 16;
 }  // namespace
 
-void CoverflowHomeUi::begin(const std::vector<RecentBook>* recent) {
+void CoverflowHomeUi::begin(const std::vector<RecentBook>* recent, const HomeMenuItem slotItem) {
   books = recent;
+  slot = slotItem;
+  sheet.close();
   currentBook = 0;
   centreArtWidth.fill(0);
   sideArtWidth.fill(0);
@@ -80,8 +81,8 @@ Rect CoverflowHomeUi::centreSlot() const {
   const int height = std::min(COVER_H, area.height);
   const int width = std::min(area.width, height * COVER_W / COVER_H);
   const int scaledHeight = width * COVER_H / COVER_W;
-  // The cover and its shadow are centred together.
-  const int top = area.y + std::max(0, (area.height - scaledHeight - SHADOW_H) / 2);
+  // Centred between the frontlight strip and the arrow band.
+  const int top = area.y + std::max(0, (area.height - ARROW_BAND - scaledHeight) / 2);
   return Rect{area.x + (area.width - width) / 2, top, width, scaledHeight};
 }
 
@@ -121,7 +122,7 @@ Rect CoverflowHomeUi::sideCoverRect(const bool right, const int centreBook) cons
   const int book = centreBook + (right ? 1 : -1);
   const int art = book >= 0 && book < bookCount() ? sideArtWidth[book] : 0;
   const int width = art > 0 ? std::min(art, fullWidth) : fullWidth;
-  const int y = centre.y + centre.height - height;
+  const int y = centre.y + (centre.height - height) / 2;
   const int x = right ? centre.x + centre.width + SIDE_GAP : centre.x - SIDE_GAP - width;
   return Rect{x, y, width, height};
 }
@@ -148,6 +149,32 @@ Rect CoverflowHomeUi::libraryButtonRect() const {
 }
 
 void CoverflowHomeUi::draw() {
+  drawHome();
+  if (sheet.isOpen()) {
+    sheet.draw();
+  } else {
+    drawArrow();
+  }
+}
+
+// Small up arrow under the coverflow: the apps sheet hint.
+Rect CoverflowHomeUi::arrowRect() const {
+  constexpr int TARGET_W = 96;
+  constexpr int TARGET_H = 56;
+  return Rect{(renderer.getScreenWidth() - TARGET_W) / 2, renderer.getScreenHeight() - TARGET_H, TARGET_W, TARGET_H};
+}
+
+void CoverflowHomeUi::drawArrow() const {
+  constexpr int HALF = 9;
+  constexpr int STROKE = 3;
+  const Rect r = arrowRect();
+  const int cx = r.x + r.width / 2;
+  const int cy = r.y + r.height / 2;
+  renderer.drawLine(cx - HALF, cy + HALF / 2, cx, cy - HALF / 2, STROKE, true);
+  renderer.drawLine(cx, cy - HALF / 2, cx + HALF, cy + HALF / 2, STROKE, true);
+}
+
+void CoverflowHomeUi::drawHome() {
   if (!books || books->empty()) {
     drawEmpty();
     return;
@@ -158,10 +185,7 @@ void CoverflowHomeUi::draw() {
   if (cur > 0) drawSideCover(false, cur);
   if (cur + 1 < bookCount()) drawSideCover(true, cur);
   const Rect shown = centreCoverRect(cur);
-  // The centre's shadow sits in front of the neighbours' shadows.
-  const int spread = SHADOW_H * 3 / 5;
-  renderer.fillRect(shown.x - spread, shown.y + shown.height, shown.width + 2 * spread, SHADOW_H, false);
-  drawFloorShadow(shown, SHADOW_H);
+  drawHalo(shown);
   const RecentBook& book = (*books)[cur];
   // No usable art: an empty path, or a thumb that could not be read when measured.
   if (book.coverBmpPath.empty() || centreArtWidth[cur] <= 0) {
@@ -189,22 +213,25 @@ void CoverflowHomeUi::drawSideCover(const bool right, const int centreBook) {
   renderer.fillRect(left, rect.y + rect.height - BORDER, width, BORDER, true);
   const int edgeX = right ? rect.x : rect.x + rect.width - BORDER;
   renderer.fillRect(edgeX, rect.y, BORDER, rect.height, true);
-  drawFloorShadow(rect, SIDE_SHADOW_H);
 }
 
-// Widens by 3 px every 5 rows as it fades; pixels off screen are clipped.
-void CoverflowHomeUi::drawFloorShadow(const Rect cover, const int depth) const {
-  const int base = cover.y + cover.height;
-  renderer.fillRect(cover.x, base, cover.width, CONTACT_H, true);
-  const int fadeRows = depth - CONTACT_H;
-  for (int row = 0; row < fadeRows; ++row) {
-    const int y = base + CONTACT_H + row;
-    const int density = SHADOW_START_DENSITY * (fadeRows - row) / fadeRows;
-    const int spread = (CONTACT_H + row) * 3 / 5;
-    const int left = std::max(0, cover.x - spread);
-    const int right = std::min(renderer.getScreenWidth(), cover.x + cover.width + spread);
-    for (int x = left; x < right; ++x) {
-      if (BAYER[y & 3][x & 3] < density) renderer.drawPixel(x, y, true);
+// Bands fade outward: 50%, 25%, 12% and 6% ink. Pixels off screen are clipped.
+void CoverflowHomeUi::drawHalo(const Rect cover) const {
+  for (int band = 0; band < HALO_BANDS; ++band) {
+    const int inner = band * HALO_BAND_W;
+    const int outer = inner + HALO_BAND_W;
+    for (int y = cover.y - outer; y < cover.y + cover.height + outer; ++y) {
+      const bool topOrBottom = y < cover.y - inner || y >= cover.y + cover.height + inner;
+      for (int x = cover.x - outer; x < cover.x + cover.width + outer; ++x) {
+        // Inside this band's ring only: skip the middle once past the side strips.
+        if (!topOrBottom && x == cover.x - inner) x = cover.x + cover.width + inner;
+        if (x >= cover.x + cover.width + outer) break;
+        const bool ink = band == 0   ? (x + y) % 2 == 0
+                         : band == 1 ? x % 2 == 0 && y % 2 == 0
+                         : band == 2 ? x % 4 == 0 && y % 2 == 0
+                                     : x % 4 == 0 && y % 4 == 0;
+        if (ink) renderer.drawPixel(x, y, true);
+      }
     }
   }
 }
@@ -250,8 +277,24 @@ bool CoverflowHomeUi::tapped(const Rect rect) const {
 }
 
 CoverflowHomeUi::Request CoverflowHomeUi::handleTouch() {
-  if (bookCount() == 0) return tapped(libraryButtonRect()) ? Request::OpenLibrary : Request::None;
+  if (sheet.isOpen()) {
+    switch (sheet.handleTouch()) {
+      case CoverflowSheet::Action::Close:
+        sheet.close();
+        return Request::Redraw;
+      case CoverflowSheet::Action::Open:
+        return Request::OpenMenuItem;
+      case CoverflowSheet::Action::None:
+        return Request::None;
+    }
+  }
   const auto swipe = input.wasSwipe();
+  // Owner-approved exception to the control rules: swipe up opens the apps sheet.
+  if (swipe == MappedInputManager::SwipeDir::Up || tapped(arrowRect())) {
+    sheet.open(slot);
+    return Request::Redraw;
+  }
+  if (bookCount() == 0) return tapped(libraryButtonRect()) ? Request::OpenLibrary : Request::None;
   // A right swipe from the left edge is also Back; Back does nothing on this Home.
   if (swipe == MappedInputManager::SwipeDir::Left || swipe == MappedInputManager::SwipeDir::Right) {
     return move(swipe == MappedInputManager::SwipeDir::Left) ? Request::Redraw : Request::None;

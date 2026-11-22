@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <vector>
 
+#include "CoverflowSheet.h"
 #include "MappedInputManager.h"
 #include "RecentBooksStore.h"
 #include "components/HomeCoverCache.h"
@@ -19,12 +20,13 @@ class GfxRenderer;
 class CoverflowHomeUi final {
  public:
   // What a pass of touch input asked Home to do.
-  enum class Request : uint8_t { None, Redraw, OpenBook, OpenLibrary };
+  enum class Request : uint8_t { None, Redraw, OpenBook, OpenLibrary, OpenMenuItem };
 
   CoverflowHomeUi(GfxRenderer& renderer, MappedInputManager& input)
-      : renderer(renderer), input(input), coverCache(renderer) {}
+      : renderer(renderer), input(input), coverCache(renderer), sheet(renderer, input) {}
   // books stays owned by Home for the visit, most recent first.
-  void begin(const std::vector<RecentBook>* books);
+  // slot: Plugins, OPDS or NONE, for the apps sheet.
+  void begin(const std::vector<RecentBook>* books, HomeMenuItem slot);
   void draw();
   // Thumbs are generated at the drawn heights; rescaling dithered art aliases.
   int centreThumbHeight() const { return centreSlot().height; }
@@ -32,6 +34,10 @@ class CoverflowHomeUi final {
   // Reads each thumb's width once, after the thumbs exist, so frames hug the art.
   void measureCovers();
   Request handleTouch();
+  // The apps sheet; Back closes it, and Up/Down do nothing while it is open.
+  bool sheetOpen() const { return sheet.isOpen(); }
+  void closeSheet() { sheet.close(); }
+  HomeMenuItem chosenMenuItem() const { return sheet.chosen(); }
   // Moves the centre by one book; false at either end (no wrap-around).
   bool move(bool next);
   // Index into books of the centre cover.
@@ -51,16 +57,21 @@ class CoverflowHomeUi final {
   Rect sideCoverRect(bool right, int centreBook) const;
   int thumbWidth(const std::string& path);
   Rect libraryButtonRect() const;
+  void drawHome();
   void drawEmpty() const;
+  Rect arrowRect() const;
+  void drawArrow() const;
   void drawTitleCard(Rect rect, const RecentBook& book) const;
   void drawSideCover(bool right, int centreBook);
-  void drawFloorShadow(Rect cover, int depth) const;
+  void drawHalo(Rect cover) const;
   bool drawSideArt(Rect rect, int left, int width, const std::string& path);
   bool tapped(Rect rect) const;
 
   GfxRenderer& renderer;
   MappedInputManager& input;
   HomeCoverCache coverCache;
+  CoverflowSheet sheet;
+  HomeMenuItem slot = HomeMenuItem::NONE;
   // Neighbour edges are drawn straight from their thumbs; only their visible strip is painted.
   HalFile sideFile;
   Bitmap sideBitmap{sideFile};

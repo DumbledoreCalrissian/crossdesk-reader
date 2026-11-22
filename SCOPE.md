@@ -103,8 +103,8 @@ connector and does not authorize additional services or weather alerts.
 ## Coverflow Home theme (owner approved, 23 November 2026)
 
 A "Coverflow" theme on Picco whose Home screen shows only the recent books'
-covers in a horizontal coverflow: a large centre cover with its neighbours
-peeking at the screen edges, standing on a dithered floor shadow. Tapping the
+covers in a horizontal coverflow: a large centre cover inside a dithered halo,
+with its neighbours peeking at the screen edges, all middle-aligned. Tapping the
 centre cover opens the book; a horizontal swipe or Up/Down moves between
 covers, and tapping a side cover brings it to the centre. Back does nothing on
 this Home. An optional line under the cover, controlled by one On/Off setting,
@@ -115,8 +115,10 @@ A swipe up on Home opens a bottom sheet, styled like the quick-controls sheet,
 with the apps and Settings. This swipe is an owner-approved exception to the
 control rules, for this theme only. Below the apps, the sheet shows a mini
 reading widget (month minutes, streak, and the last 7 days against the daily
-goal, all from the existing reading calendar) and a mini weather widget
-(cached data only, no network); tapping them opens Statistics or Weather.
+goal, all from the existing reading calendar), a mini Todo widget (the next
+tasks, as on Desk) and a mini weather widget (cached data only, no network);
+tapping them opens Statistics, Todo or Weather, which are therefore not
+repeated as app buttons (owner amendment, 23 November 2026).
 No other widgets, and no new persistent state beyond the theme setting, the
 progress setting and existing thumbnails. Other themes stay unchanged.
 

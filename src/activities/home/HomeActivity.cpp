@@ -327,7 +327,7 @@ void HomeActivity::onEnter() {
                        hasContinueReading, readingSummaries.data());
   }
 
-  if (coverflowUi) coverflowUi->begin(&recentBooks);
+  if (coverflowUi) coverflowUi->begin(&recentBooks, slotItem());
 
   const auto base = static_cast<int>(recentBooks.size());
   if (deskUi) {
@@ -463,13 +463,20 @@ void HomeActivity::loopDeskMenu() {
 }
 
 void HomeActivity::loopCoverflow() {
-  // Back does nothing here: it would open a book on many "previous" swipes.
-  buttonNavigator.onNext([this] {
-    if (coverflowUi->move(true)) requestUpdate();
-  });
-  buttonNavigator.onPrevious([this] {
-    if (coverflowUi->move(false)) requestUpdate();
-  });
+  if (coverflowUi->sheetOpen() && mappedInput.wasReleased(MappedInputManager::Button::Back)) {
+    coverflowUi->closeSheet();
+    requestUpdate();
+    return;
+  }
+  // Otherwise Back does nothing here: it would open a book on many "previous" swipes.
+  if (!coverflowUi->sheetOpen()) {
+    buttonNavigator.onNext([this] {
+      if (coverflowUi->move(true)) requestUpdate();
+    });
+    buttonNavigator.onPrevious([this] {
+      if (coverflowUi->move(false)) requestUpdate();
+    });
+  }
   switch (coverflowUi->handleTouch()) {
     case CoverflowHomeUi::Request::Redraw:
       requestUpdate();
@@ -479,6 +486,10 @@ void HomeActivity::loopCoverflow() {
       break;
     case CoverflowHomeUi::Request::OpenLibrary:
       onLibraryOpen();
+      break;
+    case CoverflowHomeUi::Request::OpenMenuItem:
+      // On failure Home stays: repaint so the sheet shows again.
+      if (!openMenuItem(coverflowUi->chosenMenuItem())) requestUpdate();
       break;
     case CoverflowHomeUi::Request::None:
       break;
