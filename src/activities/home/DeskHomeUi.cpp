@@ -5,6 +5,7 @@
 #include <I18n.h>
 #include <Logging.h>
 #include <Memory.h>
+#include <TodoOrder.h>
 #include <TodoStore.h>
 #include <TrustedTime.h>
 
@@ -16,6 +17,7 @@
 #include "HomeMenuOrder.h"
 #include "MappedInputManager.h"
 #include "RecentBooksStore.h"
+#include "components/TodoPresentation.h"
 #include "components/UITheme.h"
 #include "components/WeatherPresentation.h"
 #include "components/icons/clock.h"
@@ -233,11 +235,22 @@ void DeskHomeUi::loadTodo() {
   }
   todoAvailable = true;
   const int textWidth = todoRect().width - TODO_TEXT_INSET;
-  for (size_t i = 0; i < store->model().size() && todoCount < TODO_ROWS; ++i) {
-    const auto& task = *store->model().at(i);
-    if (task.completed) continue;
-    const auto text = renderer.truncatedText(SMALL_FONT_ID, task.text, textWidth);
-    snprintf(todoTexts[todoCount], sizeof(todoTexts[todoCount]), "%s", text.c_str());
+  TodoOrder order;
+  order.reset(store->model());
+  const int32_t today = todoToday();
+  for (size_t row = 0; row < store->model().size() && todoCount < TODO_ROWS; ++row) {
+    const int index = order.modelIndex(store->model(), row);
+    if (index < 0) break;
+    const auto& task = *store->model().at(index);
+    if (task.completed) break;
+    char prefix[8];
+    // The star is an overdue mark; keep enough room for task text on the widget.
+    const bool overdue = todoOverdue(task, today) && textWidth >= 100;
+    snprintf(prefix, sizeof(prefix), "%s%s%s", task.priority ? todoPriority(task.priority) : "",
+             task.priority ? " " : "", overdue ? "* " : "");
+    const int room = textWidth - renderer.getTextWidth(SMALL_FONT_ID, prefix);
+    const auto text = renderer.truncatedText(SMALL_FONT_ID, task.text, room);
+    snprintf(todoTexts[todoCount], sizeof(todoTexts[todoCount]), "%s%s", prefix, text.c_str());
     ++todoCount;
   }
 }

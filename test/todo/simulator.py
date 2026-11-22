@@ -51,17 +51,17 @@ with tempfile.TemporaryDirectory(prefix='checkbox-workflow-', dir=artifacts) as 
         '300:TAP:216,568;650:TAP:56,632;1000:TAP:100,632;1350:TAP:380,632;1750:TAP:420,754;'
         '1750:WAIT:SCREEN:.*Todo.*task;300:QUIT', sd)
     assert latest(sd)['tasks'] == [{'id': 1, 'completed': False, 'text': 'task'}]
-    run('edit', home + '300:TAP:180,210;300:WAIT:Entering activity: KeyboardEntry;'
+    run('edit', home + '300:TAP:180,245;300:WAIT:Entering activity: KeyboardEntry;'
         '300:TAP:52,568;700:TAP:420,754;700:WAIT:SCREEN:.*Todo.*taskq;300:QUIT', sd)
     assert latest(sd)['tasks'] == [{'id': 1, 'completed': False, 'text': 'taskq'}]
     generation = latest(sd)['generation']
-    output = run('complete', home + '300:TAP:55,210;700:SHOT:' + str(artifacts/'todo-checkbox-complete.bmp') + ';900:QUIT', sd)
+    output = run('complete', home + '300:TAP:55,245;700:SHOT:' + str(artifacts/'todo-checkbox-complete.bmp') + ';900:QUIT', sd)
     assert 'Entering activity: KeyboardEntry' not in output
     assert latest(sd)['generation'] == generation + 1 and latest(sd)['tasks'][0]['completed']
-    run('reopen', home + '300:TAP:55,210;700:QUIT', sd)
+    run('reopen', home + '300:TAP:55,245;700:QUIT', sd)
     assert latest(sd)['generation'] == generation + 2 and not latest(sd)['tasks'][0]['completed']
     before = latest(sd)
-    run('cancel-edit', home + '300:TAP:180,210;300:WAIT:Entering activity: KeyboardEntry;'
+    run('cancel-edit', home + '300:TAP:180,245;300:WAIT:Entering activity: KeyboardEntry;'
         '300:TAP:52,568;700:TAP:30,64;700:WAIT:SCREEN:.*Todo.*taskq;300:QUIT', sd)
     run('cancel-create', home + '300:TAP:180,130;300:WAIT:Entering activity: KeyboardEntry;'
         '300:TAP:52,568;700:TAP:30,64;700:WAIT:SCREEN:.*Todo.*taskq;300:QUIT', sd)
@@ -71,7 +71,7 @@ with tempfile.TemporaryDirectory(prefix='checkbox-workflow-', dir=artifacts) as 
     run('create-second', home + '300:TAP:180,130;300:WAIT:Entering activity: KeyboardEntry;'
         '300:TAP:52,568;700:TAP:420,754;700:WAIT:SCREEN:.*Todo.*taskq.*q;300:QUIT', sd)
     before = latest(sd)
-    choose = '300:TAP:440,50;300:WAIT:SCREEN:.*Delete tasks;300:TAP:55,135;700:TAP:55,210;700:WAIT:Delete selected \\(2\\);'
+    choose = '300:TAP:440,50;300:WAIT:SCREEN:.*Delete tasks;300:TAP:55,135;700:TAP:55,245;700:WAIT:Delete selected \\(2\\);'
     run('cancel-confirmation', home + choose + '400:TAP:240,765;400:WAIT:Entering activity: Confirmation;'
         '400:SHOT:' + str(artifacts/'todo-batch-confirm.bmp') + ';700:TAP:240,412;'
         '700:WAIT:SCREEN:.*Delete tasks;300:QUIT', sd)
@@ -103,7 +103,8 @@ with tempfile.TemporaryDirectory(prefix='checkbox-last-row-', dir=artifacts) as 
     sd = Path(directory)
     seed(sd, [dict(id=i + 1, completed=False, text=f'Task {i + 1:02}') for i in range(32)])
     run('last-checkbox', home + '300:SWIPE:240,650,240,200;800:SWIPE:240,650,240,200;'
-        '1300:SWIPE:240,650,240,200;1800:TAP:55,696;2300:QUIT', sd)
+        '1300:SWIPE:240,650,240,200;1800:SWIPE:240,650,240,200;'
+        '2300:SWIPE:240,650,240,200;2800:TAP:55,734;3300:QUIT', sd)
     saved = latest(sd)
     assert saved['tasks'][31]['completed'] and saved['generation'] == 2
     assert all(not t['completed'] for t in saved['tasks'][:31])
@@ -117,8 +118,8 @@ with tempfile.TemporaryDirectory(prefix='todo-order-', dir=artifacts) as directo
     sd = Path(directory)
     seed(sd, mixed)
     # Open tasks come first; row 4 is the completed Task 1, so its checkbox reopens id 1.
-    run('open-first', home + '300:WAIT:SCREEN:.*Todo \\(4/32\\) \\| New task \\| Task 2 \\| Task 4 \\| Task 1 \\| Task 3;'
-        '300:TAP:55,324;700:WAIT:SCREEN:.*New task \\| Task 1 \\| Task 2 \\| Task 4 \\| Task 3;300:QUIT', sd)
+    run('open-first', home + '300:WAIT:SCREEN:.*Todo \\(4/32\\) \\| New task \\| Task 2.*Task 4.*Task 1.*Task 3;'
+        '300:TAP:55,440;700:WAIT:SCREEN:.*New task \\| Task 1.*Task 2.*Task 4.*Task 3;300:QUIT', sd)
     saved = latest(sd)
     assert [t['completed'] for t in saved['tasks']] == [False, False, True, False]
     assert [t['id'] for t in saved['tasks']] == [1, 2, 3, 4] and saved['generation'] == 2
@@ -139,7 +140,7 @@ with tempfile.TemporaryDirectory(prefix='todo-select-', dir=artifacts) as direct
 with tempfile.TemporaryDirectory(prefix='todo-empty-edit-', dir=artifacts) as directory:
     sd = Path(directory)
     seed(sd, mixed)
-    clear = '300:TAP:180,200;300:WAIT:Entering activity: KeyboardEntry;' + ''.join(f'{300 * n}:TAP:432,693;' for n in range(1, 7)) + '2100:TAP:420,754;'
+    clear = '300:TAP:180,245;300:WAIT:Entering activity: KeyboardEntry;' + ''.join(f'{300 * n}:TAP:432,693;' for n in range(1, 7)) + '2100:TAP:420,754;'
     before = latest(sd)
     run('empty-edit-cancel', home + clear + '300:WAIT:Entering activity: Confirmation;300:TAP:240,412;'
         '700:WAIT:SCREEN:.*Todo \\(4/32\\);300:QUIT', sd)

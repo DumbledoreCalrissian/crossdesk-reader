@@ -11,14 +11,26 @@
 
 #include "activities/util/ConfirmationActivity.h"
 #include "activities/util/TextEntry.h"
+#include "components/TodoPresentation.h"
 #include "components/UITheme.h"
 #include "components/UiScreenHeader.h"
 #include "components/icons/headerIcons.h"
 #include "components/icons/listIcons.h"
+#include "components/icons/todoIcons.h"
 
 namespace fui = freeink::ui;
 
 namespace {
+struct SortOption {
+  TodoModel::Sort sort;
+  StrId label;
+  StrId hint;
+};
+constexpr SortOption SORTS[] = {
+    {TodoModel::Sort::Priority, StrId::STR_TODO_SORT_PRIORITY, StrId::STR_TODO_SORT_PRIORITY_HINT},
+    {TodoModel::Sort::DueDate, StrId::STR_TODO_SORT_DUE, StrId::STR_TODO_SORT_DUE_HINT},
+    {TodoModel::Sort::Created, StrId::STR_TODO_SORT_CREATED, StrId::STR_TODO_SORT_CREATED_HINT},
+    {TodoModel::Sort::AddedOrder, StrId::STR_TODO_SORT_ADDED, StrId::STR_TODO_SORT_ADDED_HINT}};
 // Keeps the icon slot on unselected delete rows so their text does not shift.
 constexpr auto BLANK_BITS = [] {
   std::array<uint8_t, 24 * 24 / 8> bits{};
@@ -33,14 +45,19 @@ void TodoActivity::onEnter() {
   {
     RenderLock lock(*this);
     status = store.load();
+    order.reset(store.model());
+    pencil = fui::bitmapFromIcon(todo_pencil_24);
   }
   app.on(ACTION_BACK, action, this);
   app.on(ACTION_CHECK, action, this);
-  app.on(ACTION_DELETE_MODE, action, this);
+  app.on(ACTION_HEADER, action, this);
   app.on(ACTION_DELETE_BAR, action, this);
+  if (app.handlerOverflowed()) LOG_ERR("TODO", "Action handler capacity exceeded");
 }
 
-int TodoActivity::listCount() const { return static_cast<int>(store.model().size()) + (view == View::Tasks ? 1 : 0); }
+int TodoActivity::listCount() const {
+  return view == View::Sort ? 4 : static_cast<int>(store.model().size()) + firstTaskRow();
+}
 
 unsigned TodoActivity::selectedCount() const { return std::popcount(selection); }
 
@@ -49,25 +66,9 @@ uint32_t TodoActivity::allMask() const {
   return size >= 32 ? UINT32_MAX : (uint32_t{1} << size) - 1;
 }
 
-// Rows list open tasks first, then completed ones; both keep saved order.
-int TodoActivity::modelIndex(int row) const {
-  const auto& model = store.model();
-  for (const bool completed : {false, true})
-    for (size_t i = 0; i < model.size(); ++i)
-      if (model.at(i)->completed == completed && row-- == 0) return static_cast<int>(i);
-  return -1;
-}
+int TodoActivity::modelIndex(int row) const { return order.modelIndex(store.model(), row); }
 
-int TodoActivity::rowOf(size_t index) const {
-  const auto& model = store.model();
-  const bool completed = model.at(index)->completed;
-  int row = 0;
-  for (size_t i = 0; i < model.size(); ++i) {
-    const bool other = model.at(i)->completed;
-    if (other == completed ? i < index : !other) ++row;
-  }
-  return row;
-}
+int TodoActivity::rowOf(size_t index) const { return order.rowOf(store.model(), index); }
 
 void TodoActivity::selectDone() {
   {
@@ -95,10 +96,20 @@ void TodoActivity::action(const fui::ActionEvent& event, void* context) {
       self->onBackButton();
       break;
     case ACTION_CHECK:
-      self->toggleTask(event.value - 1);
+      if (event.value >= PRIORITY_BASE)
+        self->cyclePriority(event.value - PRIORITY_BASE);
+      else
+        self->toggleTask(event.value);
       break;
-    case ACTION_DELETE_MODE:
-      self->setView(View::DeleteSelection);
+    case ACTION_HEADER:
+      switch (static_cast<HeaderAction>(event.value)) {
+        case HeaderAction::Delete:
+          if (self->store.model().size()) self->setView(View::DeleteSelection);
+          break;
+        case HeaderAction::Sort:
+          self->setView(View::Sort);
+          break;
+      }
       break;
     case ACTION_DELETE_BAR:
       switch (event.value) {
@@ -110,6 +121,9 @@ void TodoActivity::action(const fui::ActionEvent& event, void* context) {
           break;
         case SELECT_ALL:
           self->selectAll();
+          break;
+        case NEW_TASK:
+          self->enterText(0);
           break;
       }
       break;
@@ -134,30 +148,54 @@ void TodoActivity::onBackButton() {
       activityManager.goHome(HomeMenuItem::TODO);
       break;
     case View::DeleteSelection:
+    case View::Sort:
       setView(View::Tasks);
       break;
   }
 }
 
+const fui::ListRowControls* TodoActivity::provideControls(void* context, uint16_t) {
+  return &static_cast<TodoActivity*>(context)->rowControls;
+}
+
 void TodoActivity::provideRow(void* context, uint16_t index, fui::ListItem& item) {
-  const auto& self = *static_cast<TodoActivity*>(context);
+  auto& self = *static_cast<TodoActivity*>(context);
+  self.rowControls = {};
   item.actionValue = static_cast<int16_t>(index);
   item.enabled = self.store.canEdit();
-  if (self.view == View::Tasks && index == 0) {
+  if (self.view == View::Sort) {
+    if (index >= std::size(SORTS)) return;
+    const auto& option = SORTS[index];
+    item.label = I18N.get(option.label);
+    item.subtitle = I18N.get(option.hint);
+    item.bold = true;
+    item.icon = fui::bitmapFromIcon(self.store.model().sort() == option.sort ? todo_radio_on : todo_radio_off);
+    return;
+  }
+  if (self.firstTaskRow() && index == 0) {
     item.label = tr(STR_TODO_NEW);
     return;
   }
-  const int taskIndex = self.modelIndex(self.view == View::Tasks ? index - 1 : index);
+  const int taskIndex = self.modelIndex(index - self.firstTaskRow());
   if (taskIndex < 0) return;
   const auto* task = self.store.model().at(taskIndex);
   if (!task) return;
   item.label = task->text;
   item.strikethrough = task->completed;
+  formatTodoDates(*task, self.today, self.dateLabel, sizeof(self.dateLabel));
+  item.subtitle = self.dateLabel[0] ? self.dateLabel : nullptr;
+  self.rowControls.subtitleBold = todoOverdue(*task, self.today);
   if (self.view == View::Tasks) {
     item.checkbox = true;
     item.checked = task->completed;
+    self.rowControls.checkboxSize = 40;
+    self.rowControls.labelIcon = &self.pencil;
+    if (!task->completed) {
+      item.value = todoPriority(task->priority);
+      self.rowControls.trailingAction = ACTION_CHECK;
+      self.rowControls.trailingValue = static_cast<int16_t>(index + PRIORITY_BASE);
+    }
   } else {
-    // A bin, not a checkbox, so selection does not look like "done".
     const bool selected = self.selection & (uint32_t{1} << taskIndex);
     item.icon = fui::bitmapFromIcon(selected ? icon_trash_2_24 : BLANK_ICON);
   }
@@ -165,7 +203,7 @@ void TodoActivity::provideRow(void* context, uint16_t index, fui::ListItem& item
 
 void TodoActivity::buildHeader(UiScreen& screen) {
   fui::HeaderProps header;
-  const char* title = tr(STR_TODO_DELETE_TITLE);
+  const char* title = view == View::Sort ? tr(STR_TODO_SORT_TITLE) : tr(STR_TODO_DELETE_TITLE);
   if (view == View::Tasks) {
     std::snprintf(titleLabel, sizeof(titleLabel), tr(STR_TODO_COUNT), static_cast<unsigned>(store.model().size()),
                   static_cast<unsigned>(TodoModel::MAX_TASKS));
@@ -174,8 +212,12 @@ void TodoActivity::buildHeader(UiScreen& screen) {
   const auto band = prepareUiHeader(screen, renderer, header, title, ACTION_BACK);
   if (view == View::Tasks) {
     header.trailingIcon = fui::bitmapFromIcon(icon_trash_2_32);
-    header.trailingAction = ACTION_DELETE_MODE;
-    header.trailingEnabled = store.canEdit() && store.model().size();
+    header.trailingAction = ACTION_HEADER;
+    header.trailingEnabled = store.canEdit();
+    header.trailingValue = static_cast<int16_t>(HeaderAction::Delete);
+    header.trailingAdjacentIcon = fui::bitmapFromIcon(todo_sort_32);
+    header.trailingAdjacentAction = ACTION_HEADER;
+    header.trailingAdjacentValue = static_cast<int16_t>(HeaderAction::Sort);
   }
   fui::header(screen.frame(), band, header);
 }
@@ -183,6 +225,7 @@ void TodoActivity::buildHeader(UiScreen& screen) {
 void TodoActivity::buildScreen(UiScreen& screen) {
   const auto& metrics = UITheme::getInstance().getMetrics();
   const auto& theme = screen.theme();
+  today = todoToday();
   buildHeader(screen);
   screen.setContentMarginFromScreen(
       fui::Insets{static_cast<int16_t>(metrics.topPadding + metrics.headerHeight), 0, 0, 0});
@@ -227,40 +270,98 @@ void TodoActivity::buildScreen(UiScreen& screen) {
     fui::textArea(screen.frame(), band.inset(fui::Insets{0, inset, 0, inset}), text);
   }
 
+  if (view == View::Tasks && !firstTaskRow()) {
+    fui::ButtonProps add;
+    add.label = tr(STR_TODO_NEW);
+    add.icon = fui::bitmapFromIcon(todo_plus_24);
+    add.action = ACTION_DELETE_BAR;
+    add.value = NEW_TASK;
+    add.enabled = store.canEdit();
+    add.styles = theme.button;
+    add.styles.normal.border = fui::Paint::solid(fui::Color::Black);
+    add.styles.normal.borderWidth = 2;
+    add.radius = 10;
+    const auto band = screen.takeTop(72, 18).inset(fui::Insets{0, 24, 0, 24});
+    screen.button(add, band);
+  }
   fui::ListProps props;
   props.count = static_cast<uint16_t>(listCount());
   props.rowProvider = provideRow;
   props.rowProviderCtx = this;
   props.action = ACTION_ROW;
   props.checkboxAction = view == View::Tasks ? ACTION_CHECK : fui::NO_ACTION;
-  props.checkboxWidth = std::max<int16_t>(48, screen.theme().minTouchSize);
+  props.checkboxWidth = 80;
+  props.rowHeight = 88;
+  props.rowPaddingY = 0;
+  props.rowGap = 10;
+  props.rowInset = 16;
+  props.sidePadding = 0;
+  props.separatorPaint = fui::Paint::solid(fui::Color::Black);
+  props.balanceWrappedLabelWithValue = false;
   props.inputMask = fui::InputTouch;
   props.labelText = screen.theme().bodyText;
   props.labelText.maxLines = 2;
+  props.valueText = screen.theme().bodyText;
+  props.valueText.bold = true;
   props = screen.resolveListProps(props);
-  // Preserve native row sizing while bounding the two-hit task rows to the
-  // shared host's 24 interactions, including header actions and New task.
-  if (view == View::Tasks && listCount() > 10) {
-    const int16_t maxHeight = static_cast<int16_t>(props.rowHeight * 10 + props.rowGap * 9);
-    if (screen.body().height > maxHeight) screen.takeBottom(screen.body().height - maxHeight);
+  if (view == View::Sort) {
+    props.rowStyles = theme.button;
+    props.rowStyles.normal.border = fui::Paint::solid(fui::Color::Black);
+    props.rowStyles.normal.borderWidth = 2;
+    props.rowRadius = 10;
+    props.rowInset = 24;
+    props.sidePadding = 16;
+    syncListViewport(screen, props);
+    props.partialTrailingRow = false;
+    screen.list(props, std::min<int16_t>(screen.body().height, 382));
+    fui::TextAreaProps help;
+    help.text = tr(STR_TODO_SORT_HELP);
+    help.style = theme.smallText;
+    help.style.maxLines = 3;
+    help.style.align = fui::TextAlign::Center;
+    help.showCaret = false;
+    auto body = screen.body().inset(fui::Insets{24, 40, 0, 40});
+    body.height = std::min<int16_t>(body.height, uiTarget.lineHeight(help.style.font) * 3);
+    fui::textArea(screen.frame(), body, help);
+    return;
   }
+  const int16_t maxHeight = static_cast<int16_t>(props.rowHeight * 6 + props.rowGap * 5);
+  if (screen.body().height > maxHeight) screen.takeBottom(screen.body().height - maxHeight);
   syncListViewport(screen, props);
+  props.partialTrailingRow = false;
+  // Row controls use the base list's navigation but draw through the SDK's
+  // opt-in path. Provider storage lives until the next row-provider call.
+  const fui::ListRowControlsProvider controls{provideControls, this};
   if (!store.model().size()) {
-    screen.list(props, static_cast<int16_t>(props.rowHeight + props.rowGap));
+    if (firstTaskRow()) screen.list(props, props.rowHeight);
     if (status == TodoStore::Status::Ok) screen.centeredText(tr(STR_TODO_EMPTY));
   } else {
-    screen.list(props);
+    screen.list<true>(props, 0, fui::LayoutAnchor::Top, controls);
   }
+}
+
+void TodoActivity::cyclePriority(int index) {
+  {
+    RenderLock lock(*this);
+    if (view != View::Tasks) return;
+    const int taskIndex = modelIndex(index - firstTaskRow());
+    if (taskIndex < 0) return;
+    const auto& task = *store.model().at(taskIndex);
+    if (task.completed) return;
+    status = store.setPriority(task.id, (task.priority + 1) % 4);
+    nav.selected = index;
+  }
+  requestUpdate();
 }
 
 void TodoActivity::toggleTask(int index) {
   {
     RenderLock lock(*this);
     if (view != View::Tasks) return;
-    const int taskIndex = modelIndex(index);
+    const int taskIndex = modelIndex(index - firstTaskRow());
     if (taskIndex < 0) return;
     status = store.change(TodoStore::Change::Toggle, store.model().at(taskIndex)->id);
-    nav.selected = rowOf(taskIndex) + 1;
+    nav.selected = rowOf(taskIndex) + firstTaskRow();
   }
   requestUpdate();
 }
@@ -268,17 +369,30 @@ void TodoActivity::toggleTask(int index) {
 void TodoActivity::activateIndex(int index) {
   app.clearTapFlash();
   switch (view) {
+    case View::Sort: {
+      if (index < 0 || index >= static_cast<int>(std::size(SORTS))) return;
+      {
+        RenderLock lock(*this);
+        status = store.setSort(SORTS[index].sort);
+        if (status == TodoStore::Status::Ok) order.reset(store.model());
+      }
+      if (status == TodoStore::Status::Ok)
+        setView(View::Tasks);
+      else
+        requestUpdate();
+      return;
+    }
     case View::Tasks: {
-      if (index == 0) {
+      if (firstTaskRow() && index == 0) {
         enterText(0);
         return;
       }
-      const int taskIndex = modelIndex(index - 1);
+      const int taskIndex = modelIndex(index - firstTaskRow());
       if (taskIndex >= 0) enterText(store.model().at(taskIndex)->id);
       return;
     }
     case View::DeleteSelection: {
-      const int taskIndex = modelIndex(index);
+      const int taskIndex = modelIndex(index - firstTaskRow());
       if (taskIndex < 0) return;
       {
         RenderLock lock(*this);
@@ -327,7 +441,7 @@ void TodoActivity::acceptText(uint32_t id, const std::string& text) {
   status = store.change(id ? TodoStore::Change::Edit : TodoStore::Change::Add, id, text);
   if (status == TodoStore::Status::Ok && !id) {
     closeRouting();
-    nav.requestSelection(rowOf(store.model().size() - 1) + 1);
+    nav.requestSelection(rowOf(store.model().size() - 1) + firstTaskRow());
   }
 }
 

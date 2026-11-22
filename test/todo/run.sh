@@ -8,6 +8,9 @@ if [ ! -d "$json" ]; then echo 'Build simulator_picco first to install ArduinoJs
 c++ -std=c++20 -Wall -Wextra -Werror -fsanitize=address,undefined -Ilib/Todo \
   test/todo/model.cpp lib/Todo/TodoModel.cpp -o "$artifacts/todo-model-test"
 "$artifacts/todo-model-test"
+c++ -std=c++20 -Wall -Wextra -Werror -fsanitize=address,undefined -Ilib/Todo \
+  test/todo/order.cpp lib/Todo/TodoModel.cpp lib/Todo/TodoOrder.cpp -o "$artifacts/todo-order-test"
+"$artifacts/todo-order-test"
 c++ -std=c++20 -Wall -Wextra -Werror -fsanitize=address,undefined \
   -Itest/todo/stubs -Ilib/Todo -Ilib/Memory -I"$json" \
   test/todo/store.cpp lib/Todo/TodoModel.cpp lib/Todo/TodoStore.cpp -o "$artifacts/todo-store-test"

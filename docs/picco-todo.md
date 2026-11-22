@@ -2,15 +2,33 @@
 
 Open **Todo** on Home (in the Desk theme, from the menu button on Home), then **New task**. Type a description and tap **OK**.
 
-Desk Home also shows the first three unfinished tasks beside the current book.
+Desk Home also shows the first three unfinished tasks in the selected sort order
+beside the current book. Priority marks precede each task; `*` marks an overdue
+task when the clock is trusted and there is room.
 Tap anywhere in that widget to open Todo. It shows "No open tasks" when every
 task is done, and "Tasks unavailable" when the saved tasks cannot be read. On Picco, Up/Down page the recent-book
 strip; with a Confirm key they select books and the menu button.
 
 - The header shows how many tasks you have, for example "Todo (12/32)".
-- Open tasks are listed first, then completed ones. Both keep the order in
-  which they were added; the saved files keep that order too.
+- Open tasks are listed first, then completed ones. Tap the header arrows to
+  choose Priority (highest first), Due date (soonest first, no date last),
+  Created (newest first, unknown last), or Added order. Ties keep saved order.
+  Done tasks always stay below in saved order. Sorting never changes task
+  order in the files.
 - Tap a checkbox to complete or reopen a task. The task moves to its group.
+- Tap an open task's priority button to cycle none → ! → !! → !!! → none.
+  Each change saves immediately. Done tasks keep their priority but hide the
+  button. Priority and date changes do not move rows while this list is open.
+  The chosen order is recalculated when Todo is opened from Home or a sort is
+  selected (even the current sort). Returning from text entry, cancelling sort,
+  and entering/leaving the delete view do not re-sort. New tasks, and reopened
+  tasks absent from the opening snapshot, follow its open tasks until then.
+- New task stays above the scrolling rows. Up to six task rows are visible;
+  Up/Down and vertical swipes page the rows. Lists that fit do not scroll.
+  Date lines show creation and/or due dates when saved. Overdue needs a trusted
+  local clock and is shown only for open tasks; an untrusted clock leaves the
+  absolute dates visible. Due-date editing and creation-date recording are
+  added by the next milestone.
 - Tap its description to edit it. Long descriptions wrap or truncate in the list;
   editing shows the full text. Remove all the text and tap **OK** to delete the
   task after a confirmation.
@@ -42,8 +60,8 @@ and `due` (civil-day numbers, with 0 meaning unknown/no date). Dates must be
 between 0 and 2932896 (31 December 9999). Missing fields default to 0.
 The optional file-level `sort` is 0 for Added order, 1 for Priority, 2 for Due
 date, and 3 for Created; missing means Added order. Default values are omitted
-when saving. These fields are storage support for the new Todo screens; this
-milestone does not change the existing screens.
+when saving. The list and sort screen display these fields; the task edit
+screen and date assignment are the next milestone.
 
 Malformed or out-of-range optional values invalidate that snapshot, using the
 same recovery rules as other invalid data. The task order on disk never changes.
