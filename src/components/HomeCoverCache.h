@@ -13,13 +13,16 @@ class GfxRenderer;
 // Screen-lifetime thumbnail decoding and PSRAM region snapshots.
 class HomeCoverCache {
  public:
-  static constexpr size_t MAX_COVERS = 7;
+  // Slot count; Coverflow caches one centre cover per recent book.
+  static constexpr size_t MAX_COVERS = 10;
   explicit HomeCoverCache(GfxRenderer& renderer) : renderer(renderer) {}
-  void begin();
+  // capacity 0: one screen of snapshots, enough for Desk and Cover Grid.
+  void begin(size_t capacity = 0);
   void prepare();
   void invalidate();
   void invalidate(size_t index);
-  bool paint(freeink::ui::Rect rect, size_t index, const std::string& path);
+  // artShift nudges the art right of centre (Desk's look); 0 keeps it flush with the frame.
+  bool paint(freeink::ui::Rect rect, size_t index, const std::string& path, int artShift = 3);
 
  private:
   struct CachedCover {

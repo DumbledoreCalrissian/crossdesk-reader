@@ -24,7 +24,8 @@ class DeskHomeUi final {
   enum class Request : uint8_t { None, Redraw, Open };
 
   // Current book plus the strip; matches Home's summaries array.
-  static constexpr int MAX_BOOKS = HomeCoverCache::MAX_COVERS;
+  static constexpr int MAX_BOOKS = 7;
+  static_assert(MAX_BOOKS <= HomeCoverCache::MAX_COVERS);
 
   DeskHomeUi(GfxRenderer& renderer, MappedInputManager& input)
       : renderer(renderer), input(input), coverCache(renderer) {}

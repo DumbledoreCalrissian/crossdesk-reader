@@ -10,10 +10,14 @@
 
 namespace fui = freeink::ui;
 
-void HomeCoverCache::begin() {
-  // Cover regions do not overlap. Each may widen by one physical byte per row.
-  coverCacheCapacity = renderer.getRegionByteSize(0, 0, renderer.getScreenWidth(), renderer.getScreenHeight()) +
-                       MAX_COVERS * std::max(renderer.getScreenWidth(), renderer.getScreenHeight());
+void HomeCoverCache::begin(const size_t capacity) {
+  // Default: cover regions do not overlap. Each of Desk's and Cover Grid's seven
+  // covers may widen by one physical byte per row.
+  constexpr size_t DEFAULT_COVERS = 7;
+  coverCacheCapacity = capacity > 0
+                           ? capacity
+                           : renderer.getRegionByteSize(0, 0, renderer.getScreenWidth(), renderer.getScreenHeight()) +
+                                 DEFAULT_COVERS * std::max(renderer.getScreenWidth(), renderer.getScreenHeight());
   coverCache = HalMemory::allocatePsram(coverCacheCapacity);
   if (!coverCache) {
     LOG_ERR("HOME", "PSRAM cover cache unavailable (%u bytes); rendering uncached", unsigned(coverCacheCapacity));
@@ -42,7 +46,7 @@ void HomeCoverCache::prepare() {
   }
 }
 
-bool HomeCoverCache::paint(fui::Rect rect, size_t index, const std::string& path) {
+bool HomeCoverCache::paint(fui::Rect rect, size_t index, const std::string& path, const int artShift) {
   if (index >= cachedCovers.size()) return false;
   auto& cached = cachedCovers[index];
   uint8_t* const cacheData = coverCache.get();
@@ -55,17 +59,15 @@ bool HomeCoverCache::paint(fui::Rect rect, size_t index, const std::string& path
   bool drawn = false;
   if (!path.empty() && Storage.openFileForRead("HOME", path, coverFile)) {
     if (coverBitmap.parseHeaders() == BmpReaderError::Ok && coverBitmap.getWidth() > 0 && coverBitmap.getHeight() > 0) {
-      // The art nudges a few px right of center; the spine below hugs its
-      // left edge either way.
-      constexpr int ART_SHIFT = 3;
-      drawn = GUI.drawCoverThumbFill(renderer, coverBitmap, Rect{rect.x, rect.y, rect.width, rect.height}, ART_SHIFT);
+      // The spine below hugs the art's left edge either way.
+      drawn = GUI.drawCoverThumbFill(renderer, coverBitmap, Rect{rect.x, rect.y, rect.width, rect.height}, artShift);
       if (drawn) {
         renderer.drawRect(rect.x, rect.y, rect.width, rect.height);
         // False spine glued to the art's left edge (centered art means that
         // edge moves with each cover's fit margin): a dark band with a
         // dithered crease makes every cover read as a bound book. Drawn here
         // so the PSRAM snapshot below captures it.
-        const int artLeft = std::max<int>(rect.x, rect.x + (rect.width - coverBitmap.getWidth()) / 2 + ART_SHIFT);
+        const int artLeft = std::max<int>(rect.x, rect.x + (rect.width - coverBitmap.getWidth()) / 2 + artShift);
         renderer.fillRect(artLeft, rect.y, 3, rect.height);
         renderer.fillRectDither(artLeft + 3, rect.y, 2, rect.height, Color::LightGray);
       }

@@ -204,6 +204,23 @@ void HomeActivity::loadRecentCovers(int coverHeight) {
 
   int progress = 0;
   for (RecentBook& book : recentBooks) {
+    if (coverflowUi) {
+      // An empty path is the saved "no cover" result, so the book is not parsed again.
+      // Only a failed centre thumb saves it; a failed side thumb just shows a plain edge.
+      if (!book.coverBmpPath.empty()) {
+        loadGridCover(book, coverflowUi->centreThumbHeight(), showingLoading, popupRect);
+        if (book.coverBmpPath.empty()) {
+          RECENT_BOOKS.updateBook(book.path, book.title, book.author, "");
+        } else {
+          const std::string centrePath = book.coverBmpPath;
+          loadGridCover(book, coverflowUi->sideThumbHeight(), showingLoading, popupRect);
+          book.coverBmpPath = centrePath;
+        }
+      }
+      ++progress;
+      if (showingLoading) GUI.fillPopupProgress(renderer, popupRect, progress * 100 / recentBooks.size());
+      continue;
+    }
     // The cover grid shares one slot size and Desk has two; generating at any
     // other height would rescale the dithered thumb at draw time and alias badly.
     const int thumbHeight = coverGridUi ? coverGridUi->thumbHeightFor()
@@ -735,9 +752,15 @@ void HomeActivity::render(RenderLock&&) {
     return;
   }
   if (coverflowUi) {
+    // Missing thumbs are generated before drawing, so Home paints once.
+    if (!recentsLoaded && !recentsLoading) {
+      loadRecentCovers(0);
+      coverflowUi->measureCovers();
+    }
+    renderer.clearScreen();
     coverflowUi->draw();
-    renderer.displayBuffer(cleanInitialRefresh && !firstRenderDone ? HalDisplay::HALF_REFRESH
-                                                                   : HalDisplay::FAST_REFRESH);
+    const bool halfRefresh = (cleanInitialRefresh && !firstRenderDone) || coverflowUi->takeHalfRefreshDue();
+    renderer.displayBuffer(halfRefresh ? HalDisplay::HALF_REFRESH : HalDisplay::FAST_REFRESH);
     firstRenderDone = true;
     return;
   }
