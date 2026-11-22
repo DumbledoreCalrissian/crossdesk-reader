@@ -44,6 +44,7 @@ class UITheme {
   static bool supportsCoverGrid();
   static bool hasCoverGridHome();
   static bool hasDeskHome();
+  static bool hasCoverflowHome();
   static void drawCoverGridHome(CoverGridHomeUi& home);
   void reload();
   void setTheme(CrossPointSettings::UI_THEME type);

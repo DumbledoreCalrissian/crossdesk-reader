@@ -38,12 +38,15 @@ bool UITheme::hasCoverGridHome() { return SETTINGS.uiTheme == CrossPointSettings
 
 bool UITheme::hasDeskHome() { return SETTINGS.uiTheme == CrossPointSettings::DESK && supportsCoverGrid(); }
 
+bool UITheme::hasCoverflowHome() { return SETTINGS.uiTheme == CrossPointSettings::COVERFLOW && supportsCoverGrid(); }
+
 void UITheme::drawCoverGridHome(CoverGridHomeUi& home) { home.renderUi(); }
 
 void UITheme::setTheme(CrossPointSettings::UI_THEME type) {
   if (type == CrossPointSettings::COVER_GRID && !supportsCoverGrid()) type = CrossPointSettings::LYRA;
   // Desk is listed only with PSRAM (see homeThemeValues); keep a stale value usable.
   if (type == CrossPointSettings::DESK && !supportsCoverGrid()) type = CrossPointSettings::LYRA_3_COVERS;
+  if (type == CrossPointSettings::COVERFLOW && !supportsCoverGrid()) type = CrossPointSettings::LYRA_3_COVERS;
 
   switch (type) {
     case CrossPointSettings::UI_THEME::CLASSIC:
@@ -69,7 +72,9 @@ void UITheme::setTheme(CrossPointSettings::UI_THEME type) {
       currentTheme = std::make_unique<RoundedRaffTheme>();
       currentMetrics = &RoundedRaffMetrics::values;
       break;
+    case CrossPointSettings::UI_THEME::COVERFLOW:
     case CrossPointSettings::UI_THEME::LYRA_3_COVERS:
+      // Coverflow Home is drawn by CoverflowHomeUi; other screens keep Lyra Extended styling.
       LOG_DBG("UI", "Using Lyra 3 Covers theme");
       currentTheme = std::make_unique<Lyra3CoversTheme>();
       currentMetrics = &Lyra3CoversMetrics::values;

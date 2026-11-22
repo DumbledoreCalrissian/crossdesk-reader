@@ -25,7 +25,8 @@ request and implementation; ask the owner only when the answer remains unclear.
   including their storage, navigation and Sudoku pack downloads.
 - EPUB reading statistics on Picco, within the milestones below.
 - The Desk Home theme (owner approved, 14 November 2026) with the widgets
-  authorized below. Other new themes still need their own owner request.
+  authorized below, and the Coverflow Home theme described below. Other new
+  themes still need their own owner request.
 - Text entry: the full keyboard and the T9 keypad described below.
 - Picco controls follow the owner's button and touch rules recorded in the
   workspace `qa-artifacts/consistent-controls/MILESTONES.md` and `REVIEWS.md`
@@ -98,6 +99,26 @@ The widget opens Weather by touch, without joining Home's button focus ring;
 first setup is accessible through Desk's app menu. Existing other-theme Home
 menus and behavior remain unchanged. This is a narrow authorization for this
 connector and does not authorize additional services or weather alerts.
+
+## Coverflow Home theme (owner approved, 23 November 2026)
+
+A "Coverflow" theme on Picco whose Home screen shows only the recent books'
+covers in a horizontal coverflow: a large centre cover with its neighbours
+peeking at the screen edges, standing on a dithered floor shadow. Tapping the
+centre cover opens the book; a horizontal swipe or Up/Down moves between
+covers, and tapping a side cover brings it to the centre. Back does nothing on
+this Home. An optional line under the cover, controlled by one On/Off setting,
+shows the centre book's title and progress. Portrait layout; other
+orientations reuse it scaled to fit.
+
+A swipe up on Home opens a bottom sheet, styled like the quick-controls sheet,
+with the apps and Settings. This swipe is an owner-approved exception to the
+control rules, for this theme only. Below the apps, the sheet shows a mini
+reading widget (month minutes, streak, and the last 7 days against the daily
+goal, all from the existing reading calendar) and a mini weather widget
+(cached data only, no network); tapping them opens Statistics or Weather.
+No other widgets, and no new persistent state beyond the theme setting, the
+progress setting and existing thumbnails. Other themes stay unchanged.
 
 ## Sync on sleep (owner approved, 21 November 2026)
 

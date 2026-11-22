@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "./FileBrowserActivity.h"
+#include "CoverflowHomeUi.h"
 #include "DeskHomeUi.h"
 #include "RecentBooksStore.h"
 #include "activities/Activity.h"
@@ -28,6 +29,8 @@ class HomeActivity final : public Activity {
   bool hasPlugins = false;
   // Desk theme only: menu button (index recentBooks.size()) and its panel.
   std::optional<DeskHomeUi> deskUi;
+  // Coverflow theme only; handles all Home input while present.
+  std::optional<CoverflowHomeUi> coverflowUi;
   // The home "library" slot (index 2) shows Plugins while the plugin system is
   // enabled, otherwise OPDS when a server is configured. NONE hides the slot.
   // NetworkModeSelectionActivity lists OPDS in exactly the other cases.
@@ -51,7 +54,7 @@ class HomeActivity final : public Activity {
   int coverRectH = 0;
   std::vector<RecentBook> recentBooks;
   // One per recentBooks entry; read once per visit.
-  std::array<BookReadingSummary, CoverGridHomeUi::MAX_BOOKS> readingSummaries{};
+  std::array<BookReadingSummary, RecentBooksStore::MAX_RECENT_BOOKS> readingSummaries{};
   const HomeMenuItem initialMenuItem;
   const bool cleanInitialRefresh;
 
@@ -83,6 +86,7 @@ class HomeActivity final : public Activity {
   // False when the item could not be opened (allocation failure); Home stays.
   bool openMenuItem(HomeMenuItem item);
   void loopDeskMenu();
+  void loopCoverflow();
   void displayHome();
   void onFileBrowserOpen();
   void onLibraryOpen();

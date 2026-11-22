@@ -279,23 +279,28 @@ void HomeActivity::onEnter() {
 
   const auto& metrics = UITheme::getInstance().getMetrics();
   if (UITheme::hasDeskHome()) deskUi.emplace(renderer, mappedInput);
+  if (UITheme::hasCoverflowHome()) coverflowUi.emplace(renderer, mappedInput);
   if (UITheme::getInstance().hasCoverGridHome()) {
     // Screen-lifetime interaction tables and component properties exceed the stack budget.
     coverGridUi = makeUniqueNoThrow<CoverGridHomeUi>(renderer);
     if (!coverGridUi) LOG_ERR("HOME", "OOM: cover grid UI; using standard home");
   }
   // Never more books than readingSummaries holds; themes index it per book.
-  static_assert(DeskHomeUi::MAX_BOOKS <= CoverGridHomeUi::MAX_BOOKS, "readingSummaries holds every Desk book");
-  loadRecentBooks(coverGridUi ? CoverGridHomeUi::MAX_BOOKS
-                  : deskUi    ? DeskHomeUi::MAX_BOOKS
-                              : std::min(metrics.homeRecentBooksCount, static_cast<int>(readingSummaries.size())));
+  static_assert(DeskHomeUi::MAX_BOOKS <= RecentBooksStore::MAX_RECENT_BOOKS, "readingSummaries holds every Desk book");
+  static_assert(CoverGridHomeUi::MAX_BOOKS <= RecentBooksStore::MAX_RECENT_BOOKS,
+                "readingSummaries holds every grid book");
+  loadRecentBooks(coverGridUi   ? CoverGridHomeUi::MAX_BOOKS
+                  : deskUi      ? DeskHomeUi::MAX_BOOKS
+                  : coverflowUi ? RecentBooksStore::MAX_RECENT_BOOKS
+                                : std::min(metrics.homeRecentBooksCount, static_cast<int>(readingSummaries.size())));
   hasContinueReading = !recentBooks.empty();
   if (coverGridUi) {
     fillCoverGridFromLibrary();
     resolveGridCoverPaths();
   }
   readingSummaries = {};
-  loadBookReadingSummaries(recentBooks, readingSummaries.data(), readingSummaries.size());
+  // Coverflow shows no progress yet; skip the per-book stats reads.
+  if (!coverflowUi) loadBookReadingSummaries(recentBooks, readingSummaries.data(), readingSummaries.size());
   if (coverGridUi) {
     const HomeMenuItem slot = slotItem();
     coverGridUi->begin(recentBooks,
@@ -304,6 +309,8 @@ void HomeActivity::onEnter() {
                                                             : CoverGridHomeUi::SlotTab::NONE,
                        hasContinueReading, readingSummaries.data());
   }
+
+  if (coverflowUi) coverflowUi->begin(&recentBooks);
 
   const auto base = static_cast<int>(recentBooks.size());
   if (deskUi) {
@@ -323,6 +330,7 @@ void HomeActivity::onExit() {
 
   coverGridUi.reset();
   deskUi.reset();
+  coverflowUi.reset();
 
   // Free the stored cover buffer if any
   freeCoverBuffer();
@@ -437,7 +445,34 @@ void HomeActivity::loopDeskMenu() {
   }
 }
 
+void HomeActivity::loopCoverflow() {
+  // Back does nothing here: it would open a book on many "previous" swipes.
+  buttonNavigator.onNext([this] {
+    if (coverflowUi->move(true)) requestUpdate();
+  });
+  buttonNavigator.onPrevious([this] {
+    if (coverflowUi->move(false)) requestUpdate();
+  });
+  switch (coverflowUi->handleTouch()) {
+    case CoverflowHomeUi::Request::Redraw:
+      requestUpdate();
+      break;
+    case CoverflowHomeUi::Request::OpenBook:
+      onRecentBookSelected(recentBooks[coverflowUi->current()].path);
+      break;
+    case CoverflowHomeUi::Request::OpenLibrary:
+      onLibraryOpen();
+      break;
+    case CoverflowHomeUi::Request::None:
+      break;
+  }
+}
+
 void HomeActivity::loop() {
+  if (coverflowUi) {
+    loopCoverflow();
+    return;
+  }
   const int menuCount = getMenuItemCount();
   const auto& metrics = UITheme::getInstance().getMetrics();
 
@@ -694,6 +729,13 @@ void HomeActivity::render(RenderLock&&) {
         requestUpdate();
       }
     }
+    renderer.displayBuffer(cleanInitialRefresh && !firstRenderDone ? HalDisplay::HALF_REFRESH
+                                                                   : HalDisplay::FAST_REFRESH);
+    firstRenderDone = true;
+    return;
+  }
+  if (coverflowUi) {
+    coverflowUi->draw();
     renderer.displayBuffer(cleanInitialRefresh && !firstRenderDone ? HalDisplay::HALF_REFRESH
                                                                    : HalDisplay::FAST_REFRESH);
     firstRenderDone = true;
