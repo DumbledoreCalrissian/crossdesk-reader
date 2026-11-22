@@ -55,14 +55,48 @@ const TodoModel::Task* TodoModel::find(uint32_t id) const {
   return nullptr;
 }
 
-TodoModel::Result TodoModel::add(std::string_view text) {
+TodoModel::Result TodoModel::setSort(Sort sort) {
+  if (sort > Sort::Created) return Result::InvalidData;
+  if (order == sort) return Result::Unchanged;
+  order = sort;
+  return Result::Ok;
+}
+
+TodoModel::Result TodoModel::setPriority(uint32_t id, uint8_t priority) {
+  if (priority > 3) return Result::InvalidData;
+  for (size_t i = 0; i < count; ++i) {
+    auto& task = tasks[i];
+    if (task.id != id) continue;
+    if (task.priority == priority) return Result::Unchanged;
+    task.priority = priority;
+    return Result::Ok;
+  }
+  return Result::NotFound;
+}
+
+TodoModel::Result TodoModel::setDue(uint32_t id, int32_t due) {
+  if (!validDay(due)) return Result::InvalidData;
+  for (size_t i = 0; i < count; ++i) {
+    auto& task = tasks[i];
+    if (task.id != id) continue;
+    if (task.due == due) return Result::Unchanged;
+    task.due = due;
+    return Result::Ok;
+  }
+  return Result::NotFound;
+}
+
+TodoModel::Result TodoModel::add(std::string_view text, int32_t created, int32_t due) {
   text = trimmed(text);
   if (!validText(text)) return Result::InvalidText;
+  if (!validDay(created) || !validDay(due)) return Result::InvalidData;
   if (count == MAX_TASKS) return Result::Full;
   if (next == std::numeric_limits<uint32_t>::max()) return Result::IdExhausted;
   auto& task = tasks[count++];
   task = {};
   task.id = next++;
+  task.created = created;
+  task.due = due;
   std::memmove(task.text, text.data(), text.size());
   return Result::Ok;
 }
@@ -100,12 +134,18 @@ TodoModel::Result TodoModel::erase(uint32_t id) {
   return Result::NotFound;
 }
 
-bool TodoModel::appendLoaded(uint32_t id, bool completed, std::string_view text) {
-  if (!id || id == UINT32_MAX || find(id) || count == MAX_TASKS || !validText(text)) return false;
+bool TodoModel::appendLoaded(uint32_t id, bool completed, std::string_view text, uint8_t priority, int32_t created,
+                             int32_t due) {
+  if (!id || id == UINT32_MAX || find(id) || count == MAX_TASKS || !validText(text) || priority > 3 ||
+      !validDay(created) || !validDay(due))
+    return false;
   auto& task = tasks[count++];
   task = {};
   task.id = id;
   task.completed = completed;
+  task.priority = priority;
+  task.created = created;
+  task.due = due;
   std::memmove(task.text, text.data(), text.size());
   if (next <= id) next = id + 1;
   return true;
@@ -118,6 +158,7 @@ bool TodoModel::setNextId(uint32_t id) {
 }
 
 uint32_t TodoModel::checksum(uint32_t generation) const {
+  // Version 1's checksum excludes optional metadata so older firmware can read it.
   uint32_t hash = 2166136261u;
   auto byte = [&hash](uint8_t b) { hash = (hash ^ b) * 16777619u; };
   auto number = [&byte](uint32_t n) {

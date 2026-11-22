@@ -35,15 +35,15 @@ def run(theme, case, tasks, *, damaged=False, hide_battery=False):
         sd = Path(directory)
         (sd / '.crosspoint').mkdir()
         (sd / '.crosspoint/settings.json').write_text(json.dumps(dict(
-            uiTheme=theme, clockShowHeader=1, hideBatteryPercentage=2 if hide_battery else 0)))
+            uiTheme=theme, deskThemeMigrated=True, clockShowHeader=1,
+            hideBatteryPercentage=2 if hide_battery else 0)))
         saved = seed(sd, tasks)
         if damaged:
             saved = b'{broken'
             (sd / '.crosspoint/todo-a.json').write_bytes(saved)
-        # Only QA entry uses the provisional Confirm key on list Home themes.
-        # The dedicated simulator.py regression exercises touch-only navigation.
-        entry = ('300:TAP:277,760;' if theme == 4 else
-                 '300:DOWN;600:DOWN;900:DOWN;1200:ENTER;')
+        # Picco has no Confirm key. Tap Todo in each theme's Home layout.
+        entry = ['300:TAP:240,640;', '300:TAP:240,560;', '300:TAP:240,620;',
+                 '300:TAP:240,620;', '300:TAP:240,760;'][theme]
         home = ART / f'{name}-home.bmp'
         paths = [ART / f'{name}.bmp']
         script = f'0:WAIT:Entering activity: Home;200:SHOT:{home};' + entry + '0:WAIT:Entering activity: Todo;'
@@ -60,6 +60,7 @@ def run(theme, case, tasks, *, damaged=False, hide_battery=False):
         output = result.stdout + result.stderr
         (LOGS / f'visual-{name}.log').write_text(output)
         assert result.returncode == 0, f'{name}: see log'
+        assert 'WAIT timed out' not in output, f'{name}: see log'
         assert (sd / '.crosspoint/todo-a.json').read_bytes() == saved
         assert not (sd / '.crosspoint/todo-b.json').exists(), f'{name}: unexpected save'
         for path in [home, *paths]:

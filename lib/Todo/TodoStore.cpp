@@ -75,12 +75,23 @@ TodoStore::Read TodoStore::read(const char* path, TodoModel& model, uint32_t& ge
   if (!generation) return Read::Invalid;
   auto array = doc["tasks"].as<JsonArrayConst>();
   if (array.size() > TodoModel::MAX_TASKS) return Read::Invalid;
+  if (!doc["sort"].isUnbound()) {
+    if (!doc["sort"].is<uint8_t>() || doc["sort"].as<uint8_t>() > static_cast<uint8_t>(TodoModel::Sort::Created))
+      return Read::Invalid;
+    model.setSort(static_cast<TodoModel::Sort>(doc["sort"].as<uint8_t>()));
+  }
   for (JsonObjectConst task : array) {
     if (!task["id"].is<uint32_t>() || !task["completed"].is<bool>() || !task["text"].is<const char*>())
       return Read::Invalid;
+    for (const char* key : {"priority", "created", "due"}) {
+      if (!task[key].isUnbound() && !task[key].is<int32_t>()) return Read::Invalid;
+    }
+    const int32_t priority = task["priority"] | int32_t{0};
+    if (priority < 0 || priority > 3) return Read::Invalid;
     const JsonString text = task["text"].as<JsonString>();
     if (!model.appendLoaded(task["id"].as<uint32_t>(), task["completed"].as<bool>(),
-                            std::string_view(text.c_str(), text.size())))
+                            std::string_view(text.c_str(), text.size()), static_cast<uint8_t>(priority),
+                            task["created"] | int32_t{0}, task["due"] | int32_t{0}))
       return Read::Invalid;
   }
   if (!model.setNextId(doc["nextId"].as<uint32_t>()) || model.checksum(generation) != doc["checksum"].as<uint32_t>())
@@ -123,6 +134,7 @@ bool TodoStore::save(const TodoModel& model) {
   doc["generation"] = generation + 1;
   doc["nextId"] = model.nextId();
   doc["checksum"] = model.checksum(generation + 1);
+  if (model.sort() != TodoModel::Sort::AddedOrder) doc["sort"] = static_cast<uint8_t>(model.sort());
   auto array = doc["tasks"].to<JsonArray>();
   for (size_t i = 0; i < model.size(); ++i) {
     const auto& task = *model.at(i);
@@ -130,11 +142,15 @@ bool TodoStore::save(const TodoModel& model) {
     entry["id"] = task.id;
     entry["completed"] = task.completed;
     entry["text"] = task.text;
+    if (task.priority) entry["priority"] = task.priority;
+    if (task.created) entry["created"] = task.created;
+    if (task.due) entry["due"] = task.due;
   }
   if (doc.overflowed()) return false;
+  const size_t expected = measureJson(doc);
+  if (expected > MAX_FILE_BYTES) return false;
   auto file = Storage.open(TEMP, O_WRONLY | O_CREAT | O_TRUNC);
   if (!file) return false;
-  const size_t expected = measureJson(doc);
   const bool complete = serializeJson(doc, file) == expected;
   if (!file.close() || !complete) return false;
   // FAT cannot replace a destination atomically. Only discard the inactive
@@ -169,6 +185,44 @@ TodoStore::Status TodoStore::change(Change change, uint32_t id, std::string_view
       result = candidate->erase(id);
       break;
   }
+  return commit(*candidate, result);
+}
+
+TodoStore::Status TodoStore::saveTask(uint32_t id, std::string_view text, int32_t due, int32_t created) {
+  if (!writable) return Status::InvalidData;
+  auto candidate = makeUniqueNoThrow<TodoModel>(tasks);
+  if (!candidate) {
+    LOG_ERR("TODO", "Task allocation failed: %u bytes", static_cast<unsigned>(sizeof(TodoModel)));
+    return Status::OutOfMemory;
+  }
+  if (!id) return commit(*candidate, candidate->add(text, created, due));
+  const auto edited = candidate->edit(id, text);
+  if (edited != TodoModel::Result::Ok && edited != TodoModel::Result::Unchanged) return commit(*candidate, edited);
+  const auto dated = candidate->setDue(id, due);
+  return commit(*candidate, dated == TodoModel::Result::Unchanged ? edited : dated);
+}
+
+TodoStore::Status TodoStore::setPriority(uint32_t id, uint8_t priority) {
+  if (!writable) return Status::InvalidData;
+  auto candidate = makeUniqueNoThrow<TodoModel>(tasks);
+  if (!candidate) {
+    LOG_ERR("TODO", "Priority allocation failed: %u bytes", static_cast<unsigned>(sizeof(TodoModel)));
+    return Status::OutOfMemory;
+  }
+  return commit(*candidate, candidate->setPriority(id, priority));
+}
+
+TodoStore::Status TodoStore::setSort(TodoModel::Sort sort) {
+  if (!writable) return Status::InvalidData;
+  auto candidate = makeUniqueNoThrow<TodoModel>(tasks);
+  if (!candidate) {
+    LOG_ERR("TODO", "Sort allocation failed: %u bytes", static_cast<unsigned>(sizeof(TodoModel)));
+    return Status::OutOfMemory;
+  }
+  return commit(*candidate, candidate->setSort(sort));
+}
+
+TodoStore::Status TodoStore::commit(const TodoModel& model, TodoModel::Result result) {
   switch (result) {
     case TodoModel::Result::Unchanged:
       return Status::Ok;
@@ -178,15 +232,16 @@ TodoStore::Status TodoStore::change(Change change, uint32_t id, std::string_view
     case TodoModel::Result::IdExhausted:
       return Status::Full;
     case TodoModel::Result::NotFound:
+    case TodoModel::Result::InvalidData:
       return Status::InvalidData;
     case TodoModel::Result::Ok:
       break;
   }
-  if (!save(*candidate)) {
+  if (!save(model)) {
     LOG_ERR("TODO", "Save failed; previous snapshot retained");
     return Status::StorageError;
   }
-  tasks = *candidate;
+  tasks = model;
   return Status::Ok;
 }
 

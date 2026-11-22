@@ -7,6 +7,9 @@ class TodoStore {
   enum class Change { Add, Edit, Toggle, Delete };
   Status load();
   Status change(Change change, uint32_t id = 0, std::string_view text = {});
+  Status saveTask(uint32_t id, std::string_view text, int32_t due, int32_t created = 0);
+  Status setPriority(uint32_t id, uint8_t priority);
+  Status setSort(TodoModel::Sort sort);
   bool canEdit() const { return writable; }
   Status eraseTasks(const uint32_t* ids, size_t count);
   const TodoModel& model() const { return tasks; }
@@ -22,4 +25,5 @@ class TodoStore {
   enum class Read { Missing, Empty, Valid, Invalid };
   static Read read(const char* path, TodoModel& model, uint32_t& generation);
   bool save(const TodoModel& model);
+  Status commit(const TodoModel& model, TodoModel::Result result);
 };
