@@ -63,5 +63,17 @@ int main() {
   assert(m->appendLoaded(1, true, "loaded", 2, 20779, 20785));
   assert(m->find(1)->priority == 2 && m->find(1)->created == 20779 && m->find(1)->due == 20785);
   assert(sizeof(TodoModel::Task) == 208);
+  assert(TodoModel::shiftDue(0, 0, 1) == 0);
+  assert(TodoModel::shiftDue(0, 20000, 1) == 20001);
+  assert(TodoModel::shiftDue(0, 20000, -7) == 19993);
+  assert(TodoModel::shiftDue(20000, 0, -1) == 19999);
+  assert(TodoModel::shiftDue(1, 0, -1) == 1);
+  assert(TodoModel::shiftDue(7, 0, -7) == 7);
+  assert(TodoModel::shiftDue(8, 0, -7) == 1);
+  assert(TodoModel::shiftDue(TodoModel::MAX_DAY, 0, 1) == TodoModel::MAX_DAY);
+  assert(TodoModel::shiftDue(TodoModel::MAX_DAY - 7, 0, 7) == TodoModel::MAX_DAY);
+  assert(TodoModel::shiftDue(1, 0, INT32_MAX) == 1);
+  assert(TodoModel::shiftDue(TodoModel::MAX_DAY, 0, INT32_MIN) == TodoModel::MAX_DAY);
+  assert(TodoModel::shiftDue(0, -1, 1) == 0);
   std::cout << "Todo model checks passed; model bytes=" << sizeof(TodoModel) << '\n';
 }

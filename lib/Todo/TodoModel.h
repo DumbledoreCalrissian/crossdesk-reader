@@ -44,6 +44,7 @@ class TodoModel {
   bool setNextId(uint32_t id);
   static bool validText(std::string_view text);
   static bool validDay(int32_t day) { return day >= 0 && day <= MAX_DAY; }
+  static int32_t shiftDue(int32_t due, int32_t today, int32_t delta);
   static bool blank(std::string_view text) { return trimmed(text).empty(); }
   uint32_t checksum(uint32_t generation) const;
 

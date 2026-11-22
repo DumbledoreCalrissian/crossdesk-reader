@@ -73,9 +73,9 @@ def main():
         assert latest(sd)['tasks'][2]['priority'] == 2
         assert latest(sd)['generation'] == saved['generation'] + 4
         assert ordered(out, 'Gamma task', 'Alpha task', 'Beta task', 'Done task')
-        # Completed row has no cycler; right-side tap must open text entry, not change priority.
+        # Completed row has no cycler; right-side tap opens the editor, not a priority change.
         before = latest(sd)
-        run(sd, 'done-no-cycler', HOME + '300:TAP:420,539;300:WAIT:Entering activity: KeyboardEntry;300:TAP:30,64;700:QUIT')
+        run(sd, 'done-no-cycler', HOME + '300:TAP:420,539;300:WAIT:Entering activity: TodoEdit;300:TAP:30,50;700:QUIT')
         assert latest(sd) == before
         # Sort radio positions are Priority, Due date, Created, Added order.
         expected = [(1, ('Gamma task', 'Alpha task', 'Beta task', 'Done task')),

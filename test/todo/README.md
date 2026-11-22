@@ -31,3 +31,16 @@ profile, built separately; no extra hardware target or device test is implied.
 `orientations.py` checks paging, checkbox routing and sort under all four saved
 reader orientation preferences. Todo remains portrait, as other non-reader
 screens do; this does not claim rotated landscape rendering.
+
+`editor.py` checks draft-only changes, Save/Back, new/existing keyboard cancel,
+no save from a keyboard release, trusted creation and presets, untrusted clock
+behavior, date buttons and rocker input, bounds, T9 selection, and a real host
+SD open failure. `visuals.py` also captures the edit screen in each theme and
+checks that viewing it does not rewrite Todo snapshots.
+
+`python3 test/todo/widget.py` checks Desk priority/date columns with and without
+a trusted clock, retaining task snapshots and capturing layout fixtures.
+
+Priority badges retain their original touch target while drawing a smaller
+light-grey fill. SDK tests cover unchanged label geometry and LTR/RTL taps
+outside the visible badge; `features.py` covers the task priority flow.

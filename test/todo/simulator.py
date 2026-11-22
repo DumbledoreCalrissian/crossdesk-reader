@@ -49,10 +49,10 @@ with tempfile.TemporaryDirectory(prefix='checkbox-workflow-', dir=artifacts) as 
     sd = Path(directory)
     run('create', home + '300:WAIT:SCREEN:.*No tasks yet;400:TAP:180,130;400:WAIT:Entering activity: KeyboardEntry;'
         '300:TAP:216,568;650:TAP:56,632;1000:TAP:100,632;1350:TAP:380,632;1750:TAP:420,754;'
-        '1750:WAIT:SCREEN:.*Todo.*task;300:QUIT', sd)
+        '1750:WAIT:SCREEN:.*Edit task;300:TAP:240,750;700:WAIT:SCREEN:.*Todo.*task;300:QUIT', sd)
     assert latest(sd)['tasks'] == [{'id': 1, 'completed': False, 'text': 'task'}]
-    run('edit', home + '300:TAP:180,245;300:WAIT:Entering activity: KeyboardEntry;'
-        '300:TAP:52,568;700:TAP:420,754;700:WAIT:SCREEN:.*Todo.*taskq;300:QUIT', sd)
+    run('edit', home + '300:TAP:180,245;300:WAIT:Entering activity: TodoEdit;300:TAP:180,175;300:WAIT:Entering activity: KeyboardEntry;'
+        '300:TAP:52,568;700:TAP:420,754;700:WAIT:SCREEN:.*Edit task;300:TAP:240,750;700:WAIT:SCREEN:.*Todo.*taskq;300:QUIT', sd)
     assert latest(sd)['tasks'] == [{'id': 1, 'completed': False, 'text': 'taskq'}]
     generation = latest(sd)['generation']
     output = run('complete', home + '300:TAP:55,245;700:SHOT:' + str(artifacts/'todo-checkbox-complete.bmp') + ';900:QUIT', sd)
@@ -61,15 +61,15 @@ with tempfile.TemporaryDirectory(prefix='checkbox-workflow-', dir=artifacts) as 
     run('reopen', home + '300:TAP:55,245;700:QUIT', sd)
     assert latest(sd)['generation'] == generation + 2 and not latest(sd)['tasks'][0]['completed']
     before = latest(sd)
-    run('cancel-edit', home + '300:TAP:180,245;300:WAIT:Entering activity: KeyboardEntry;'
-        '300:TAP:52,568;700:TAP:30,64;700:WAIT:SCREEN:.*Todo.*taskq;300:QUIT', sd)
+    run('cancel-edit', home + '300:TAP:180,245;300:WAIT:Entering activity: TodoEdit;300:TAP:180,175;300:WAIT:Entering activity: KeyboardEntry;'
+        '300:TAP:52,568;700:TAP:30,64;700:WAIT:SCREEN:.*Edit task;300:TAP:30,50;700:WAIT:SCREEN:.*Todo.*taskq;300:QUIT', sd)
     run('cancel-create', home + '300:TAP:180,130;300:WAIT:Entering activity: KeyboardEntry;'
         '300:TAP:52,568;700:TAP:30,64;700:WAIT:SCREEN:.*Todo.*taskq;300:QUIT', sd)
     run('reject-empty', home + '300:TAP:180,130;300:WAIT:Entering activity: KeyboardEntry;'
         '300:TAP:420,754;300:WAIT:SCREEN:.*UTF-8 bytes;300:QUIT', sd)
     assert latest(sd) == before
     run('create-second', home + '300:TAP:180,130;300:WAIT:Entering activity: KeyboardEntry;'
-        '300:TAP:52,568;700:TAP:420,754;700:WAIT:SCREEN:.*Todo.*taskq.*q;300:QUIT', sd)
+        '300:TAP:52,568;700:TAP:420,754;700:WAIT:SCREEN:.*Edit task;300:TAP:240,750;700:WAIT:SCREEN:.*Todo.*taskq.*q;300:QUIT', sd)
     before = latest(sd)
     choose = '300:TAP:440,50;300:WAIT:SCREEN:.*Delete tasks;300:TAP:55,135;700:TAP:55,245;700:WAIT:Delete selected \\(2\\);'
     run('cancel-confirmation', home + choose + '400:TAP:240,765;400:WAIT:Entering activity: Confirmation;'
@@ -140,10 +140,10 @@ with tempfile.TemporaryDirectory(prefix='todo-select-', dir=artifacts) as direct
 with tempfile.TemporaryDirectory(prefix='todo-empty-edit-', dir=artifacts) as directory:
     sd = Path(directory)
     seed(sd, mixed)
-    clear = '300:TAP:180,245;300:WAIT:Entering activity: KeyboardEntry;' + ''.join(f'{300 * n}:TAP:432,693;' for n in range(1, 7)) + '2100:TAP:420,754;'
+    clear = '300:TAP:180,245;300:WAIT:Entering activity: TodoEdit;300:TAP:180,175;300:WAIT:Entering activity: KeyboardEntry;' + ''.join(f'{300 * n}:TAP:432,693;' for n in range(1, 7)) + '2100:TAP:420,754;2100:WAIT:SCREEN:.*Edit task;300:TAP:240,750;'
     before = latest(sd)
     run('empty-edit-cancel', home + clear + '300:WAIT:Entering activity: Confirmation;300:TAP:240,412;'
-        '700:WAIT:SCREEN:.*Todo \\(4/32\\);300:QUIT', sd)
+        '700:WAIT:SCREEN:.*Edit task;300:TAP:30,50;700:WAIT:SCREEN:.*Todo \\(4/32\\);300:QUIT', sd)
     assert latest(sd) == before
     run('empty-edit-delete', home + clear + '300:WAIT:SCREEN:.*Delete this task\\?.*Task 2;300:TAP:240,475;'
         '700:WAIT:SCREEN:.*Todo \\(3/32\\);300:QUIT', sd)

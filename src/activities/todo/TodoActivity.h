@@ -8,6 +8,7 @@ class TodoActivity final : public UiListActivity {
  public:
   TodoActivity(GfxRenderer& renderer, MappedInputManager& input) : UiListActivity("Todo", renderer, input) {}
   void onEnter() override;
+  void onCovered() override { closeRouting(); }
 
  private:
   static constexpr auto ACTION_BACK = ACTION_USER;
@@ -45,6 +46,7 @@ class TodoActivity final : public UiListActivity {
   void activateIndex(int index) override;
   void onBackButton() override;
   void enterText(uint32_t id);
+  void editTask(uint32_t id);
   void acceptText(uint32_t id, const std::string& text);
   void confirmDelete();
   void setView(View next);

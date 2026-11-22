@@ -7,6 +7,14 @@ namespace {
 bool space(unsigned char c) { return c == ' ' || c == '\t' || c == '\r' || c == '\n'; }
 }  // namespace
 
+int32_t TodoModel::shiftDue(int32_t due, int32_t today, int32_t delta) {
+  if (!validDay(due) || !validDay(today) || !delta) return due;
+  const int64_t base = due ? due : today;
+  if (!base) return due;
+  const int64_t next = base + delta;
+  return next > 0 && next <= MAX_DAY ? static_cast<int32_t>(next) : due;
+}
+
 std::string_view TodoModel::trimmed(std::string_view text) {
   while (!text.empty() && space(text.front())) text.remove_prefix(1);
   while (!text.empty() && space(text.back())) text.remove_suffix(1);

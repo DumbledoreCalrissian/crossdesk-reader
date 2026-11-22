@@ -53,6 +53,10 @@ def run(theme, case, tasks, *, damaged=False, hide_battery=False):
             script += ('700:TAP:430,60;700:WAIT:SCREEN:.*Delete tasks;'
                        f'300:SHOT:{paths[1]};600:TAP:55,140;'
                        '600:WAIT:Delete selected \\(1\\);' + f'300:SHOT:{paths[2]};600:TAP:30,60;')
+        if tasks and not damaged:
+            paths += [ART / f'{name}-edit.bmp']
+            script += ('900:TAP:180,245;900:WAIT:Entering activity: TodoEdit;'
+                       f'400:SHOT:{paths[-1]};700:TAP:30,60;')
         script += '1000:QUIT'
         env = dict(os.environ, SDL_VIDEODRIVER='dummy', CROSSPOINT_SIM_SD=str(sd),
                    CROSSPOINT_SIM_SCREEN_TEXT='1', CROSSPOINT_SIM_INPUT_SCRIPT=script)

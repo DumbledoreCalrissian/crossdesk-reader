@@ -234,7 +234,8 @@ void DeskHomeUi::loadTodo() {
     return;
   }
   todoAvailable = true;
-  const int textWidth = todoRect().width - TODO_TEXT_INSET;
+  const int markerWidth = std::max(TODO_TEXT_INSET, renderer.getTextWidth(SMALL_FONT_ID, "!!!") + TODO_GAP);
+  const int textWidth = todoRect().width - markerWidth;
   TodoOrder order;
   order.reset(store->model());
   const int32_t today = todoToday();
@@ -243,13 +244,13 @@ void DeskHomeUi::loadTodo() {
     if (index < 0) break;
     const auto& task = *store->model().at(index);
     if (task.completed) break;
-    char prefix[8];
-    // The star is an overdue mark; keep enough room for task text on the widget.
-    const bool overdue = todoOverdue(task, today) && textWidth >= 100;
-    snprintf(prefix, sizeof(prefix), "%s%s%s", task.priority ? todoPriority(task.priority) : "",
-             task.priority ? " " : "", overdue ? "* " : "");
-    const int room = textWidth - renderer.getTextWidth(SMALL_FONT_ID, prefix);
-    const auto text = renderer.truncatedText(SMALL_FONT_ID, task.text, room);
+    todoPriorities[todoCount] = task.priority;
+    formatTodoShortDate(task.due, todoDueTexts[todoCount], sizeof(todoDueTexts[todoCount]));
+    const int dateWidth = renderer.getTextWidth(SMALL_FONT_ID, todoDueTexts[todoCount]);
+    const int room = textWidth - (dateWidth ? dateWidth + TODO_GAP : 0);
+    const char* prefix = todoOverdue(task, today) && room >= 100 ? "* " : "";
+    const auto text = renderer.truncatedText(SMALL_FONT_ID, task.text,
+                                             std::max(0, room - renderer.getTextWidth(SMALL_FONT_ID, prefix)));
     snprintf(todoTexts[todoCount], sizeof(todoTexts[todoCount]), "%s%s", prefix, text.c_str());
     ++todoCount;
   }
@@ -270,10 +271,20 @@ void DeskHomeUi::drawTodo() const {
   drawWidgetChevron(renderer, rect);
   const int ruleY = rect.y + renderer.getLineHeight(UI_10_FONT_ID) + TODO_GAP;
   renderer.drawLine(rect.x, ruleY, rect.x + rect.width - 1, ruleY, true);
+  const int markerWidth = std::max(TODO_TEXT_INSET, renderer.getTextWidth(SMALL_FONT_ID, "!!!") + TODO_GAP);
   for (size_t i = 0; i < todoCount; ++i) {
     const int y = ruleY + 1 + TODO_GAP + static_cast<int>(i) * rowH;
-    renderer.fillRoundedRect(rect.x + 3, y + (rowH - 5) / 2, 5, 5, 2, Color::Black);
-    renderer.drawText(SMALL_FONT_ID, rect.x + TODO_TEXT_INSET, y + (rowH - lineH) / 2, todoTexts[i], true);
+    const int textY = y + (rowH - lineH) / 2;
+    if (todoPriorities[i]) {
+      renderer.drawText(SMALL_FONT_ID, rect.x, textY, todoPriority(todoPriorities[i]), true);
+    } else {
+      renderer.fillRoundedRect(rect.x + 3, y + (rowH - 5) / 2, 5, 5, 2, Color::Black);
+    }
+    renderer.drawText(SMALL_FONT_ID, rect.x + markerWidth, textY, todoTexts[i], true);
+    const int dateWidth = renderer.getTextWidth(SMALL_FONT_ID, todoDueTexts[i]);
+    if (dateWidth) {
+      renderer.drawText(SMALL_FONT_ID, rect.x + rect.width - dateWidth, textY, todoDueTexts[i], true);
+    }
   }
   if (!todoCount) {
     const char* text = todoAvailable ? tr(STR_TODO_NONE) : tr(STR_TODO_UNAVAILABLE);

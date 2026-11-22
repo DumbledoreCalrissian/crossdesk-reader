@@ -106,8 +106,10 @@ class DeskHomeUi final {
   void drawTodo() const;
 
   static constexpr size_t TODO_ROWS = 3;
-  // Full UTF-8 task, priority/overdue marks, ellipsis and terminator.
-  char todoTexts[TODO_ROWS][TodoModel::MAX_TEXT_BYTES + 12]{};
+  // Snapshot text, optional overdue mark, and separate priority/date columns.
+  char todoTexts[TODO_ROWS][TodoModel::MAX_TEXT_BYTES + 4]{};
+  char todoDueTexts[TODO_ROWS][40]{};
+  uint8_t todoPriorities[TODO_ROWS]{};
   size_t todoCount = 0;
   bool todoAvailable = false;  // snapshot loaded; false shows "unavailable"
 

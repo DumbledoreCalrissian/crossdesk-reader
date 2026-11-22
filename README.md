@@ -26,7 +26,8 @@ Plugins or OPDS shortcut) open from **Apps** at the top right of Home.
 
 Desk also shows:
 
-- A Todo preview. Tap it to open Todo; its bullets do not complete tasks.
+- A Todo preview in the chosen sort order, with priority and overdue marks.
+  Tap it to open Todo; its bullets do not complete tasks.
 - A [reading calendar](docs/reading-calendar.md) with monthly minutes, a streak
   of days meeting your daily reading goal and the goal itself. Tap the day grid
   to open **Statistics**, or tap the totals/goal footer to change the goal in
@@ -47,7 +48,8 @@ The calendar opens monthly Statistics, and the weather widget opens Weather:
 
 ## Other features added by this fork
 
-- [Todo](docs/picco-todo.md): an offline task list.
+- [Todo](docs/picco-todo.md): an offline list of up to 32 tasks, with priorities,
+  creation/due dates and sorting. Text and due dates save from its edit screen.
 - [Pomodoro](docs/picco-pomodoro.md): a foreground focus/break timer.
 - [Sudoku](docs/picco-sudoku.md): notes, undo, hints, saved games and puzzle-pack downloads.
 - [T9 keypad](USER_GUIDE.md#36-settings): a phone-style keypad for every text field, as an option to the
@@ -65,7 +67,8 @@ The calendar opens monthly Statistics, and the weather widget opens Weather:
 - `My Clippings.txt` is hidden from Library and Home, but stays in Browse Files.
 
 <p align="center">
-  <img src="docs/images/screenshots/todo.png" alt="Todo list" width="200">
+  <img src="docs/images/screenshots/todo.png" alt="Todo list with priority and date marks" width="200">
+  <img src="docs/images/screenshots/todo-edit.png" alt="Todo edit screen with due-date controls" width="200">
   <img src="docs/images/screenshots/pomodoro.png" alt="Pomodoro timer" width="200">
   <img src="docs/images/screenshots/sudoku-game.png" alt="Sudoku game with notes, undo, check and reveal" width="200">
   <img src="docs/images/screenshots/t9-keypad.png" alt="T9 keypad while typing a new Todo task" width="200">

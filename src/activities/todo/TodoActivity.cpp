@@ -9,6 +9,7 @@
 #include <bit>
 #include <cstdio>
 
+#include "TodoEditActivity.h"
 #include "activities/util/ConfirmationActivity.h"
 #include "activities/util/TextEntry.h"
 #include "components/TodoPresentation.h"
@@ -21,6 +22,9 @@
 namespace fui = freeink::ui;
 
 namespace {
+constexpr fui::BoxStyle PRIORITY_STYLE{.background = fui::Paint::dither(fui::Color::LightGray),
+                                       .foreground = fui::Paint::solid(fui::Color::Black),
+                                       .radius = 8};
 struct SortOption {
   TodoModel::Sort sort;
   StrId label;
@@ -123,7 +127,7 @@ void TodoActivity::action(const fui::ActionEvent& event, void* context) {
           self->selectAll();
           break;
         case NEW_TASK:
-          self->enterText(0);
+          self->editTask(0);
           break;
       }
       break;
@@ -192,6 +196,8 @@ void TodoActivity::provideRow(void* context, uint16_t index, fui::ListItem& item
     self.rowControls.labelIcon = &self.pencil;
     if (!task->completed) {
       item.value = todoPriority(task->priority);
+      self.rowControls.trailingVisualInset = fui::Insets{12, 16, 12, 16};
+      self.rowControls.trailingStyle = &PRIORITY_STYLE;
       self.rowControls.trailingAction = ACTION_CHECK;
       self.rowControls.trailingValue = static_cast<int16_t>(index + PRIORITY_BASE);
     }
@@ -384,11 +390,11 @@ void TodoActivity::activateIndex(int index) {
     }
     case View::Tasks: {
       if (firstTaskRow() && index == 0) {
-        enterText(0);
+        editTask(0);
         return;
       }
       const int taskIndex = modelIndex(index - firstTaskRow());
-      if (taskIndex >= 0) enterText(store.model().at(taskIndex)->id);
+      if (taskIndex >= 0) editTask(store.model().at(taskIndex)->id);
       return;
     }
     case View::DeleteSelection: {
@@ -402,6 +408,39 @@ void TodoActivity::activateIndex(int index) {
       return;
     }
   }
+}
+
+void TodoActivity::editTask(uint32_t id) {
+  if (!store.canEdit()) return;
+  if (!mappedInput.hasTouch()) {
+    enterText(id);
+    return;
+  }
+  if (!id && store.model().size() == TodoModel::MAX_TASKS) {
+    {
+      RenderLock lock(*this);
+      status = TodoStore::Status::Full;
+    }
+    requestUpdate();
+    return;
+  }
+  auto editor = makeUniqueNoThrow<TodoEditActivity>(renderer, mappedInput, store, id);
+  if (!editor) {
+    LOG_ERR("TODO", "Edit allocation failed: %u bytes", static_cast<unsigned>(sizeof(TodoEditActivity)));
+    {
+      RenderLock lock(*this);
+      status = TodoStore::Status::OutOfMemory;
+    }
+    requestUpdate();
+    return;
+  }
+  startActivityForResult(std::move(editor), [this, id](const ActivityResult& result) {
+    if (result.isCancelled) return;
+    RenderLock lock(*this);
+    closeRouting();
+    status = TodoStore::Status::Ok;
+    if (!id && store.model().size()) nav.requestSelection(rowOf(store.model().size() - 1) + firstTaskRow());
+  });
 }
 
 void TodoActivity::enterText(uint32_t id) {
@@ -438,7 +477,8 @@ void TodoActivity::acceptText(uint32_t id, const std::string& text) {
     return;
   }
   RenderLock lock(*this);
-  status = store.change(id ? TodoStore::Change::Edit : TodoStore::Change::Add, id, text);
+  const auto* task = store.model().find(id);
+  status = store.saveTask(id, text, task ? task->due : 0, id ? 0 : todoToday());
   if (status == TodoStore::Status::Ok && !id) {
     closeRouting();
     nav.requestSelection(rowOf(store.model().size() - 1) + firstTaskRow());
@@ -497,20 +537,4 @@ void TodoActivity::confirmDelete() {
   });
 }
 
-const char* TodoActivity::statusText() const {
-  switch (status) {
-    case TodoStore::Status::Ok:
-      return nullptr;
-    case TodoStore::Status::InvalidText:
-      return tr(STR_TODO_INVALID_TEXT);
-    case TodoStore::Status::Full:
-      return tr(STR_TODO_FULL);
-    case TodoStore::Status::StorageError:
-      return tr(STR_TODO_SAVE_ERROR);
-    case TodoStore::Status::InvalidData:
-      return tr(STR_TODO_DATA_ERROR);
-    case TodoStore::Status::OutOfMemory:
-      return tr(STR_TODO_MEMORY_ERROR);
-  }
-  return nullptr;
-}
+const char* TodoActivity::statusText() const { return todoStatusText(status); }
