@@ -50,6 +50,9 @@ The calendar opens monthly Statistics, and the weather widget opens Weather:
 - [Todo](docs/picco-todo.md): an offline task list.
 - [Pomodoro](docs/picco-pomodoro.md): a foreground focus/break timer.
 - [Sudoku](docs/picco-sudoku.md): notes, undo, hints, saved games and puzzle-pack downloads.
+- [T9 keypad](USER_GUIDE.md#36-settings): a phone-style keypad for every text field, as an option to the
+  full keyboard. Tap a key again to cycle its letters. Choose it in Settings >
+  System > Keyboard type, and set its size with Keypad height.
 - [Reading statistics](docs/picco-reading-stats.md): Book statistics in the EPUB
   reader menu (progress, reading time, forward page turns, and a confirmed reset
   that keeps position and bookmarks). Library shows each opened EPUB's saved
@@ -65,6 +68,7 @@ The calendar opens monthly Statistics, and the weather widget opens Weather:
   <img src="docs/images/screenshots/todo.png" alt="Todo list" width="200">
   <img src="docs/images/screenshots/pomodoro.png" alt="Pomodoro timer" width="200">
   <img src="docs/images/screenshots/sudoku-game.png" alt="Sudoku game with notes, undo, check and reveal" width="200">
+  <img src="docs/images/screenshots/t9-keypad.png" alt="T9 keypad while typing a new Todo task" width="200">
 </p>
 
 ## From CrossPoint Reader
