@@ -114,7 +114,7 @@ jobs:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
           version="${RELEASE_TAG#crossdesk-v}"; version="${version#v}"
-          asset="crosspoint-${version}-${{ matrix.device }}.bin"
+          asset="crossdesk-${version}-${{ matrix.device }}.bin"
           cp ".pio/build/${PIO_ENV}/firmware.bin" "$asset"
           echo "name=$asset" >> "$GITHUB_OUTPUT"
 
@@ -152,7 +152,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: dist
-          pattern: crosspoint-*.bin
+          pattern: crossdesk-*.bin
           merge-multiple: true
 
       - name: Download license asset
@@ -168,9 +168,9 @@ jobs:
         run: |
           version="${RELEASE_TAG#crossdesk-v}"; version="${version#v}"
           for device in x3-x4 sticky x4pro x4c papermono metalio_eink4 eego_a4 picco; do
-            test -f "dist/crosspoint-${version}-${device}.bin"
+            test -f "dist/crossdesk-${version}-${device}.bin"
           done
-          test "$(find dist -maxdepth 1 -type f -name 'crosspoint-*.bin' | wc -l)" -eq 8
+          test "$(find dist -maxdepth 1 -type f -name 'crossdesk-*.bin' | wc -l)" -eq 8
           test -s dist/LICENSE
-          gh release upload "$RELEASE_TAG" dist/crosspoint-*.bin dist/LICENSE \
+          gh release upload "$RELEASE_TAG" dist/crossdesk-*.bin dist/LICENSE \
             --repo "$GITHUB_REPOSITORY" --clobber
