@@ -15,8 +15,9 @@
 #include "components/themes/BaseTheme.h"
 
 class GfxRenderer;
+struct BookReadingSummary;
 
-// Coverflow theme Home: the recent books' covers and nothing else.
+// Coverflow theme Home: recent covers, optional progress and an apps sheet.
 class CoverflowHomeUi final {
  public:
   // What a pass of touch input asked Home to do.
@@ -24,9 +25,10 @@ class CoverflowHomeUi final {
 
   CoverflowHomeUi(GfxRenderer& renderer, MappedInputManager& input)
       : renderer(renderer), input(input), coverCache(renderer), sheet(renderer, input) {}
-  // books stays owned by Home for the visit, most recent first.
+  // Home owns the books and matching summaries for the visit, most recent first.
+  // A null summaries pointer disables the progress line.
   // slot: Plugins, OPDS or NONE, for the apps sheet.
-  void begin(const std::vector<RecentBook>* books, HomeMenuItem slot);
+  void begin(const std::vector<RecentBook>* books, HomeMenuItem slot, const BookReadingSummary* summaries);
   void draw();
   // Thumbs are generated at the drawn heights; rescaling dithered art aliases.
   int centreThumbHeight() const { return centreSlot().height; }
@@ -49,12 +51,13 @@ class CoverflowHomeUi final {
   int bookCount() const;
   Rect contentArea() const;
   // Largest centre frame; covers without art and the cache budget use it.
-  Rect centreSlot() const;
+  Rect centreSlot(const BookReadingSummary* summary = nullptr) const;
+  int progressHeight(const BookReadingSummary& summary) const;
   int sideSlotHeight() const;
   // Frames narrowed to each book's art width.
   Rect centreCoverRect(int book) const;
   // Full rect of a neighbour cover; only the part on screen is drawn.
-  Rect sideCoverRect(bool right, int centreBook) const;
+  Rect sideCoverRect(Rect centre, bool right, int centreBook) const;
   int thumbWidth(const std::string& path);
   Rect libraryButtonRect() const;
   void drawHome();
@@ -62,7 +65,8 @@ class CoverflowHomeUi final {
   Rect arrowRect() const;
   void drawArrow() const;
   void drawTitleCard(Rect rect, const RecentBook& book) const;
-  void drawSideCover(bool right, int centreBook);
+  void drawProgress(Rect cover, const RecentBook& book, const BookReadingSummary& summary) const;
+  void drawSideCover(Rect centre, bool right, int centreBook);
   void drawHalo(Rect cover) const;
   bool drawSideArt(Rect rect, int left, int width, const std::string& path);
   bool tapped(Rect rect) const;
@@ -76,6 +80,7 @@ class CoverflowHomeUi final {
   HalFile sideFile;
   Bitmap sideBitmap{sideFile};
   const std::vector<RecentBook>* books = nullptr;
+  const BookReadingSummary* summaries = nullptr;
   // Written by input (main task), read by render; draw() reads it once.
   std::atomic<int> currentBook{0};
   // Only touched on the render task, so no lock.

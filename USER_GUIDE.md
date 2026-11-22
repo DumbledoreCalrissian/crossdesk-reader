@@ -121,8 +121,10 @@ read-only; Back or the Home gesture returns with **Apps** selected.
 
 Statistics also opens from **Apps → Statistics** in Desk and from the Home
 menu in the other themes. In Cover Grid, use the chart icon in the bottom
-shortcut strip. Back or the Home gesture returns to the Statistics shortcut
-in those themes; Desk returns with **Apps** selected.
+shortcut strip. In Coverflow, use the **Reading** card in the apps sheet.
+Back or the Home gesture closes Statistics. Coverflow returns to the covers
+with the sheet closed, Desk selects **Apps**, and the other themes select the
+Statistics shortcut.
 
 The calendar totals/goal footer still opens **Settings → Reader** with
 **Daily reading goal** selected. Clock-problem messages open **Settings → System**
@@ -282,6 +284,18 @@ Settings are grouped into **System**, **Display**, **Reader**, **Controls**, **L
   - "RoundedRaff" - A rounded theme with additional visual styling
   - "Cover Grid" - Recent books as a grid of covers (devices with PSRAM only)
   - "Desk" (default on devices with PSRAM) - The current book, recent books, Todo, reading calendar and weather on one screen (devices with PSRAM only)
+  - "Coverflow" (devices with PSRAM only) - Recent books in a row of covers. Swipe left or right, press Up or Down, or tap a side cover to move between books. Tap the centre cover to open the book.
+
+    Swipe up or tap the bottom arrow to open the apps sheet. Tap the Reading,
+    Todo or Weather card to open Statistics, Todo or Weather. Swipe down, tap
+    above the sheet or press Back to close it. Back does nothing on Coverflow
+    Home when the sheet is closed.
+
+- **Coverflow Progress** (shown when Coverflow is selected): On by default. The
+  line below the centre cover shows the title, a bar and percentage when saved
+  progress is available, and recorded reading time when available for an EPUB.
+  On very narrow covers, the line shows the values that fit. Choose Off to hide
+  the line and centre the cover.
 
 - **Sunlight Fading Fix**: Configure whether to enable a software-fix for the issue where white X4 models may fade when used in direct sunlight:
   
@@ -797,6 +811,7 @@ Local book and folder moves carry clipping data with them. Deleting a local book
 Please note that this firmware is currently in active development. The following features are **not yet supported** but are planned for future updates:
 
 * **Cover Images:** Large cover images embedded into EPUB require several seconds (~10s for ~2000 pixel tall image) to convert for sleep screen and home screen thumbnail. Consider optimizing the EPUB with e.g. https://github.com/bigbag/epub-to-xtc-converter to speed this up.
+  Coverflow creates separate thumbnails for the centre and side covers. It reuses those thumbnails when you change the **Coverflow Progress** setting.
 * **Image Support:** Most JPG, PNG and non-interlaced GIF images in EPUBs render correctly, including book covers. Animated GIFs show only the first frame. Interlaced GIFs are not supported and use an outlined image placeholder.
 
 ---

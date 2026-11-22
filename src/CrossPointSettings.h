@@ -368,6 +368,7 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
   uint8_t longPressMenuFunction = LP_MENU_DISABLED;
   // UI Theme: Desk where PSRAM allows it, otherwise Lyra.
   uint8_t uiTheme = defaultUiTheme();
+  uint8_t coverflowProgress = 1;
   // Sunlight fading compensation
   uint8_t fadingFix = 0;
   // The fading fix compensates the X4/X3 grayscale waveforms; other boards never get it.

@@ -316,8 +316,10 @@ void HomeActivity::onEnter() {
     resolveGridCoverPaths();
   }
   readingSummaries = {};
-  // Coverflow shows no progress yet; skip the per-book stats reads.
-  if (!coverflowUi) loadBookReadingSummaries(recentBooks, readingSummaries.data(), readingSummaries.size());
+  const bool coverflowProgress = coverflowUi && SETTINGS.coverflowProgress;
+  if (!coverflowUi || coverflowProgress) {
+    loadBookReadingSummaries(recentBooks, readingSummaries.data(), readingSummaries.size(), coverflowProgress);
+  }
   if (coverGridUi) {
     const HomeMenuItem slot = slotItem();
     coverGridUi->begin(recentBooks,
@@ -327,7 +329,7 @@ void HomeActivity::onEnter() {
                        hasContinueReading, readingSummaries.data());
   }
 
-  if (coverflowUi) coverflowUi->begin(&recentBooks, slotItem());
+  if (coverflowUi) coverflowUi->begin(&recentBooks, slotItem(), coverflowProgress ? readingSummaries.data() : nullptr);
 
   const auto base = static_cast<int>(recentBooks.size());
   if (deskUi) {

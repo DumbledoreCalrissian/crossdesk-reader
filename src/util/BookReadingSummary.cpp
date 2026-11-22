@@ -14,11 +14,12 @@
 #include "RecentBooksStore.h"
 
 namespace {
-BookReadingSummary loadSummary(const std::string& path, readingstats::Store* store) {
+BookReadingSummary loadSummary(const std::string& path, readingstats::Store* store, const bool includeOtherFormats) {
   BookReadingSummary summary;
-  if (!FsHelpers::hasEpubExtension(path)) return summary;
-  summary.percent = loadBookProgress(path);
-  if (!store) return summary;
+  const bool isEpub = FsHelpers::hasEpubExtension(path);
+  if (!isEpub && !includeOtherFormats) return summary;
+  summary.percent = loadBookProgress(path, /*readOnly=*/true);
+  if (!isEpub || !store) return summary;
   // Read-only: the reader owns the only writer, and it is closed while Home runs.
   const auto status = store->load(path);
   if (status == readingstats::Store::Status::Ok || status == readingstats::Store::Status::Recovered) {
@@ -30,12 +31,13 @@ BookReadingSummary loadSummary(const std::string& path, readingstats::Store* sto
 }
 }  // namespace
 
-void loadBookReadingSummaries(const std::vector<RecentBook>& books, BookReadingSummary* out, size_t count) {
+void loadBookReadingSummaries(const std::vector<RecentBook>& books, BookReadingSummary* out, size_t count,
+                              const bool includeOtherFormats) {
   count = std::min(count, books.size());
   if (count == 0) return;
   auto store = makeUniqueNoThrow<readingstats::Store>();
   if (!store) LOG_ERR("HOME", "OOM: reading stats");
-  for (size_t i = 0; i < count; ++i) out[i] = loadSummary(books[i].path, store.get());
+  for (size_t i = 0; i < count; ++i) out[i] = loadSummary(books[i].path, store.get(), includeOtherFormats);
 }
 
 void formatReadingTime(const BookReadingSummary& summary, char* out, size_t size) {

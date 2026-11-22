@@ -437,6 +437,9 @@ void forEachBaseSetting(SettingVisitor visit, void* context) {
                                    home_button::KEYS[i], StrId::STR_CAT_CONTROLS));
     }
   }
+  emit(SettingInfo::Toggle(StrId::STR_COVERFLOW_PROGRESS, &CrossPointSettings::coverflowProgress, "coverflowProgress",
+                           StrId::STR_CAT_DISPLAY)
+           .withWebHidden());
 }
 
 size_t countBaseSettings() {

@@ -631,6 +631,8 @@ STR_COVERFLOW_EMPTY_HINT: "Copy EPUB files to the SD card, then open the Library
 STR_COVERFLOW_OPEN_LIBRARY: "Open Library"
 STR_COVERFLOW_READING: "Reading"
 STR_COVERFLOW_TODO_OPEN: "%u open"
+STR_COVERFLOW_PROGRESS: "Coverflow Progress"
+STR_COVERFLOW_PERCENT: "%d%%"
 STR_DESK_START_READING: "Open Library from Apps to start reading."
 STR_TIME_SHORT_HOURS: "%lluh %02llum"
 STR_TIME_SHORT_MINUTES: "%llum"

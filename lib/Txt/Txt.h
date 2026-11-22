@@ -11,7 +11,8 @@ class BookMetadataCache;
 class Txt {
  public:
   static bool isTxtOrMd(std::string_view path);
-  static bool validateCache(const std::string& filepath, const std::string& cachePath, size_t cachedSize);
+  static bool validateCache(const std::string& filepath, const std::string& cachePath, size_t cachedSize,
+                            bool invalidateOnFailure = true);
   static void invalidateCache(const std::string& cachePath);
   static bool streamTxtToHtml(const std::string& filepath, Print& out);
   static std::string findCompanionCoverImage(const std::string& filepath);

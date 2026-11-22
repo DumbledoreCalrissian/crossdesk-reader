@@ -118,7 +118,8 @@ void Txt::invalidateCache(const std::string& cachePath) {
   Storage.removeDir((cachePath + "/sections").c_str());
 }
 
-bool Txt::validateCache(const std::string& filepath, const std::string& cachePath, size_t cachedSize) {
+bool Txt::validateCache(const std::string& filepath, const std::string& cachePath, size_t cachedSize,
+                        const bool invalidateOnFailure) {
   bool valid = true;
 
   // 1. If html/0.html exists, check its embedded version comment
@@ -131,7 +132,7 @@ bool Txt::validateCache(const std::string& filepath, const std::string& cachePat
       if (bytesRead > 0) {
         header[bytesRead] = '\0';
         if (strstr(header, TxtToHtml::cacheVersionTag(filepath)) == nullptr) {
-          LOG_DBG("TXT", "HTML cache version mismatch or missing, invalidating: %s", htmlPath.c_str());
+          LOG_DBG("TXT", "HTML cache version mismatch or missing: %s", htmlPath.c_str());
           valid = false;
         }
       } else {
@@ -147,7 +148,7 @@ bool Txt::validateCache(const std::string& filepath, const std::string& cachePat
     HalFile rawFile;
     if (Storage.openFileForRead("TXT", filepath, rawFile)) {
       if (rawFile.size() != cachedSize) {
-        LOG_DBG("TXT", "File size changed (%u vs cached %u), invalidating cache", static_cast<uint32_t>(rawFile.size()),
+        LOG_DBG("TXT", "File size changed (%u vs cached %u)", static_cast<uint32_t>(rawFile.size()),
                 static_cast<uint32_t>(cachedSize));
         valid = false;
       }
@@ -156,7 +157,7 @@ bool Txt::validateCache(const std::string& filepath, const std::string& cachePat
     }
   }
 
-  if (!valid) {
+  if (!valid && invalidateOnFailure) {
     LOG_DBG("TXT", "Cache invalid for %s, wiping html and sections", filepath.c_str());
     invalidateCache(cachePath);
   }

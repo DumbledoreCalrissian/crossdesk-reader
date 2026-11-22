@@ -6,6 +6,7 @@
 #include <HalStorage.h>
 #include <Logging.h>
 #include <Memory.h>
+#include <Txt.h>
 #include <Xtc.h>
 
 #include <algorithm>
@@ -33,20 +34,24 @@ int percentFromProgress(const uint8_t* data, const int size, const int spineCoun
 }
 }  // namespace
 
-int loadBookProgress(const std::string& path) {
+int loadBookProgress(const std::string& path, const bool readOnly) {
   uint8_t data[10]{};
   if (FsHelpers::hasReflowableBookExtension(path)) {
     const std::string cachePath = Epub::cachePathFor("/.crosspoint", path);
     // A book never opened has no position, so skip its metadata.
     if (!Storage.exists((cachePath + "/progress.bin").c_str())) return -1;
-    if (FsHelpers::hasEpubExtension(path)) {
-      // EPUB needs only the cached spine sizes: no archive, protection or CSS work.
+    const bool isEpub = FsHelpers::hasEpubExtension(path);
+    if (isEpub || readOnly) {
+      // The percentage only needs cached spine sizes and a current TXT/MD cache.
       auto metadata = makeUniqueNoThrow<BookMetadataCache>(cachePath);
       if (!metadata) {
         LOG_ERR("HOME", "OOM: progress metadata");
         return -1;
       }
       if (!metadata->load()) return -1;
+      if (!isEpub && !Txt::validateCache(path, cachePath, metadata->getCumulativeSize(0),
+                                         /*invalidateOnFailure=*/false))
+        return -1;
       HalFile file;
       if (!Storage.openFileForRead("HOME", cachePath + "/progress.bin", file)) return -1;
       const int size = file.read(data, sizeof(data));
@@ -55,7 +60,7 @@ int loadBookProgress(const std::string& path) {
           data, size, spineCount, metadata->getCumulativeSize(spineCount - 1) > 0,
           [&](int spine, float fraction) { return metadata->calculateProgress(spine, fraction); });
     }
-    // TXT and Markdown validate their cache through Epub::load.
+    // Existing TXT and Markdown callers validate and clean stale data through Epub::load.
     auto epub = makeUniqueNoThrow<Epub>(path, "/.crosspoint");
     if (!epub) {
       LOG_ERR("HOME", "OOM: progress metadata");

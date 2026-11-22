@@ -6,7 +6,6 @@ CrossDesk Reader is firmware for the BOOX Picco, based on
 [CrossPoint Reader](https://github.com/crosspoint-reader/crosspoint-reader).
 It is an unofficial fork, not supported by the CrossPoint project or BOOX.
 
-All features in this build work and have been tested on a BOOX Picco.
 The fork follows upstream CrossPoint closely, so treat it like a development
 branch: new upstream changes arrive often, and bugs can still appear.
 
@@ -46,6 +45,21 @@ The calendar opens monthly Statistics, and the weather widget opens Weather:
   <img src="docs/images/screenshots/weather.png" alt="Weather page with a three-day forecast" width="240">
 </p>
 
+## Coverflow
+
+To use Coverflow, choose **Settings > Display > UI Theme > Coverflow**. Swipe
+left or right, press Up or Down, or tap a side cover to move between recent
+books. Tap the centre cover to open the book.
+
+Swipe up or tap the arrow to open the apps sheet. Its Reading, Todo and Weather
+cards open Statistics, Todo and Weather. To close the sheet, swipe down, tap
+above it or press Back. Back does nothing on Coverflow Home when the sheet is
+closed.
+
+**Coverflow Progress** is on by default. The line below the centre cover can
+show the title, saved progress, and recorded EPUB reading time.
+You can turn it off in **Settings > Display** while using Coverflow.
+
 ## Other features added by this fork
 
 - [Todo](docs/picco-todo.md): an offline list of up to 32 tasks, with priorities,
@@ -58,8 +72,7 @@ The calendar opens monthly Statistics, and the weather widget opens Weather:
 - [Reading statistics](docs/picco-reading-stats.md): Book statistics in the EPUB
   reader menu (progress, reading time, forward page turns, and a confirmed reset
   that keeps position and bookmarks). Library shows each opened EPUB's saved
-  percentage. Home shows the current EPUB's progress and reading time in every
-  theme.
+  percentage. Home can show the current EPUB's progress and reading time.
 - Monthly **Statistics**: a read-only page with one month of the reading
   calendar. It opens from Desk and from the other themes' Home menus (the chart
   icon in Cover Grid).

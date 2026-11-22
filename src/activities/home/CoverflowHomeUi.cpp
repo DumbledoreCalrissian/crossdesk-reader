@@ -5,9 +5,12 @@
 #include <Logging.h>
 
 #include <algorithm>
+#include <cstdio>
+#include <cstring>
 
 #include "components/UITheme.h"
 #include "fontIds.h"
+#include "util/BookReadingSummary.h"
 
 // Cache slots are indexed by recent-book position.
 static_assert(RecentBooksStore::MAX_RECENT_BOOKS <= HomeCoverCache::MAX_COVERS);
@@ -23,7 +26,12 @@ constexpr int SIDE_GAP = 20;
 // Dithered halo around the centre cover only.
 constexpr int HALO_BANDS = 4;
 constexpr int HALO_BAND_W = 4;
-static_assert(HALO_BANDS * HALO_BAND_W < SIDE_GAP);
+constexpr int HALO_OUTSET = HALO_BANDS * HALO_BAND_W;
+static_assert(HALO_OUTSET < SIDE_GAP);
+constexpr int PROGRESS_TITLE_FONT = UI_10_FONT_ID;
+constexpr int PROGRESS_GAP = 12;
+constexpr int STATS_GAP = 6;
+constexpr int BAR_HEIGHT = 8;
 // Room for the sheet arrow under the coverflow.
 constexpr int ARROW_BAND = 56;
 // Taps at y < 44 open the frontlight panel (ActivityManager).
@@ -34,10 +42,48 @@ constexpr int BORDER = 2;
 constexpr int SPINE = 5;
 constexpr int TEXT_INSET = 32;
 constexpr int GAP = 16;
+
+void drawProgressTitle(const GfxRenderer& renderer, const Rect slot, const int y, const std::string& title) {
+  constexpr auto STYLE = EpdFontFamily::BOLD;
+  constexpr char ELLIPSIS[] = "\xe2\x80\xa6";
+  char fitted[128];
+  constexpr size_t MAX_PREFIX = sizeof(fitted) - sizeof(ELLIPSIS);
+  if (title.size() <= MAX_PREFIX) {
+    const int width = renderer.getTextWidth(PROGRESS_TITLE_FONT, title.c_str(), STYLE);
+    if (width <= slot.width) {
+      renderer.drawText(PROGRESS_TITLE_FONT, slot.x + (slot.width - width) / 2, y, title.c_str(), true, STYLE);
+      return;
+    }
+  }
+
+  const auto fitPrefix = [&](size_t length) {
+    while (length > 0 && (static_cast<uint8_t>(title[length]) & 0xc0) == 0x80) --length;
+    memcpy(fitted, title.data(), length);
+    memcpy(fitted + length, ELLIPSIS, sizeof(ELLIPSIS));
+    return renderer.getTextWidth(PROGRESS_TITLE_FONT, fitted, STYLE);
+  };
+  // Each probe rounds back to a UTF-8 boundary. Search byte offsets to bound the number of measurements.
+  size_t low = 0;
+  size_t high = std::min(title.size(), MAX_PREFIX);
+  while (low < high) {
+    const size_t mid = low + (high - low + 1) / 2;
+    if (fitPrefix(mid) <= slot.width) {
+      low = mid;
+    } else {
+      high = mid - 1;
+    }
+  }
+  const int width = fitPrefix(low);
+  if (width <= slot.width) {
+    renderer.drawText(PROGRESS_TITLE_FONT, slot.x + (slot.width - width) / 2, y, fitted, true, STYLE);
+  }
+}
 }  // namespace
 
-void CoverflowHomeUi::begin(const std::vector<RecentBook>* recent, const HomeMenuItem slotItem) {
+void CoverflowHomeUi::begin(const std::vector<RecentBook>* recent, const HomeMenuItem slotItem,
+                            const BookReadingSummary* readingSummaries) {
   books = recent;
+  summaries = readingSummaries;
   slot = slotItem;
   sheet.close();
   currentBook = 0;
@@ -75,15 +121,24 @@ Rect CoverflowHomeUi::contentArea() const {
   return area;
 }
 
-Rect CoverflowHomeUi::centreSlot() const {
+Rect CoverflowHomeUi::centreSlot(const BookReadingSummary* summary) const {
   const Rect area = contentArea();
   // Keep 2:3-ish proportions when the screen is smaller than the design size.
   const int height = std::min(COVER_H, area.height);
   const int width = std::min(area.width, height * COVER_W / COVER_H);
   const int scaledHeight = width * COVER_H / COVER_W;
   // Centred between the frontlight strip and the arrow band.
-  const int top = area.y + std::max(0, (area.height - ARROW_BAND - scaledHeight) / 2);
+  const int halo = summary ? HALO_OUTSET : 0;
+  const int stackHeight = scaledHeight + 2 * halo + (summary ? progressHeight(*summary) : 0);
+  const int top = area.y + std::max(0, (area.height - ARROW_BAND - stackHeight) / 2) + halo;
   return Rect{area.x + (area.width - width) / 2, top, width, scaledHeight};
+}
+
+int CoverflowHomeUi::progressHeight(const BookReadingSummary& summary) const {
+  int height = PROGRESS_GAP + renderer.getLineHeight(PROGRESS_TITLE_FONT);
+  if (summary.percent >= 0) height += STATS_GAP + BAR_HEIGHT;
+  if (summary.percent >= 0 || summary.timeKnown) height += STATS_GAP + renderer.getLineHeight(UI_10_FONT_ID);
+  return height;
 }
 
 int CoverflowHomeUi::sideSlotHeight() const { return centreSlot().height * SIDE_H / COVER_H; }
@@ -95,7 +150,7 @@ static Rect fitToArt(const Rect slot, const int artWidth) {
 }
 
 Rect CoverflowHomeUi::centreCoverRect(const int book) const {
-  return fitToArt(centreSlot(), book >= 0 && book < bookCount() ? centreArtWidth[book] : 0);
+  return fitToArt(centreSlot(summaries ? &summaries[book] : nullptr), centreArtWidth[book]);
 }
 
 int CoverflowHomeUi::thumbWidth(const std::string& path) {
@@ -115,9 +170,8 @@ void CoverflowHomeUi::measureCovers() {
   }
 }
 
-Rect CoverflowHomeUi::sideCoverRect(const bool right, const int centreBook) const {
-  const Rect centre = centreCoverRect(centreBook);
-  const int height = sideSlotHeight();
+Rect CoverflowHomeUi::sideCoverRect(const Rect centre, const bool right, const int centreBook) const {
+  const int height = centre.height * SIDE_H / COVER_H;
   const int fullWidth = height * COVER_W / COVER_H;
   const int book = centreBook + (right ? 1 : -1);
   const int art = book >= 0 && book < bookCount() ? sideArtWidth[book] : 0;
@@ -182,26 +236,71 @@ void CoverflowHomeUi::drawHome() {
   coverCache.prepare();
   // One read: a swipe during this draw must not mix two books' layouts.
   const int cur = currentBook.load();
-  if (cur > 0) drawSideCover(false, cur);
-  if (cur + 1 < bookCount()) drawSideCover(true, cur);
-  const Rect shown = centreCoverRect(cur);
+  const auto* summary = summaries ? &summaries[cur] : nullptr;
+  const Rect slot = centreSlot(summary);
+  const Rect shown = fitToArt(slot, centreArtWidth[cur]);
+  if (cur > 0) drawSideCover(shown, false, cur);
+  if (cur + 1 < bookCount()) drawSideCover(shown, true, cur);
   drawHalo(shown);
   const RecentBook& book = (*books)[cur];
   // No usable art: an empty path, or a thumb that could not be read when measured.
   if (book.coverBmpPath.empty() || centreArtWidth[cur] <= 0) {
-    drawTitleCard(centreSlot(), book);
-    return;
+    drawTitleCard(slot, book);
+  } else {
+    coverCache.paint(freeink::ui::Rect{static_cast<int16_t>(shown.x), static_cast<int16_t>(shown.y),
+                                       static_cast<int16_t>(shown.width), static_cast<int16_t>(shown.height)},
+                     static_cast<size_t>(cur), UITheme::getCoverThumbPath(book.coverBmpPath, slot.height),
+                     /*artShift=*/0);
   }
-  const Rect centre = shown;
-  coverCache.paint(freeink::ui::Rect{static_cast<int16_t>(centre.x), static_cast<int16_t>(centre.y),
-                                     static_cast<int16_t>(centre.width), static_cast<int16_t>(centre.height)},
-                   static_cast<size_t>(cur), UITheme::getCoverThumbPath(book.coverBmpPath, centreThumbHeight()),
-                   /*artShift=*/0);
+  if (summary) drawProgress(shown, book, *summary);
+}
+
+void CoverflowHomeUi::drawProgress(const Rect cover, const RecentBook& book, const BookReadingSummary& summary) const {
+  const int titleY = cover.y + cover.height + HALO_OUTSET + PROGRESS_GAP;
+  const int titleH = renderer.getLineHeight(PROGRESS_TITLE_FONT);
+  // Keep title and stats ink within the bar, including glyph bearings.
+  const auto [clipX, clipY, clipWidth, clipHeight] = renderer.getClipRect();
+  const int barLeft = std::max(clipX, cover.x);
+  const int barRight = std::min(clipX + clipWidth, cover.x + cover.width);
+  renderer.setClipRect(barLeft, clipY, std::max(0, barRight - barLeft), clipHeight);
+  drawProgressTitle(renderer, cover, titleY, book.title);
+
+  const int barY = titleY + titleH + STATS_GAP;
+  int statsY = barY;
+  char percent[12]{};
+  if (summary.percent >= 0) {
+    renderer.drawRect(cover.x, barY, cover.width, BAR_HEIGHT);
+    const int filled = cover.width * summary.percent / 100;
+    if (filled > 0) renderer.fillRect(cover.x, barY, filled, BAR_HEIGHT);
+    statsY += BAR_HEIGHT + STATS_GAP;
+    snprintf(percent, sizeof(percent), tr(STR_COVERFLOW_PERCENT), summary.percent);
+  }
+  char time[64];
+  formatReadingTime(summary, time, sizeof(time));
+  int font = UI_10_FONT_ID;
+  int percentWidth = renderer.getTextWidth(font, percent);
+  int timeWidth = renderer.getTextWidth(font, time);
+  const int gap = percent[0] && time[0] ? STATS_GAP : 0;
+  if (percentWidth + gap + timeWidth > cover.width) {
+    font = SMALL_FONT_ID;
+    formatShortReadingTime(summary, time, sizeof(time));
+    percentWidth = renderer.getTextWidth(font, percent);
+    timeWidth = renderer.getTextWidth(font, time);
+  }
+  int timeRoom = cover.width;
+  if (percent[0] && percentWidth <= cover.width) {
+    renderer.drawText(font, cover.x, statsY, percent);
+    timeRoom -= percentWidth + gap;
+  }
+  if (time[0] && timeWidth <= timeRoom) {
+    renderer.drawText(font, cover.x + cover.width - timeWidth, statsY, time);
+  }
+  renderer.setClipRect(clipX, clipY, clipWidth, clipHeight);
 }
 
 // Only the edge of a neighbour shows: its art (or a light tone) and outline.
-void CoverflowHomeUi::drawSideCover(const bool right, const int centreBook) {
-  const Rect rect = sideCoverRect(right, centreBook);
+void CoverflowHomeUi::drawSideCover(const Rect centre, const bool right, const int centreBook) {
+  const Rect rect = sideCoverRect(centre, right, centreBook);
   const int left = std::max(0, rect.x);
   const int width = std::min(renderer.getScreenWidth(), rect.x + rect.width) - left;
   if (width <= 0) return;

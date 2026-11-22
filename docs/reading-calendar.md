@@ -30,10 +30,11 @@ reset the calendar.
 Statistics is read-only. Use the left/right month arrows or page buttons to
 browse from the oldest retained month to the current month. An arrow disappears
 at each limit. Statistics also opens from **Apps → Statistics** in Desk and
-from the Home menu in the other themes (the chart icon in Cover Grid). Back or
-the Home gesture returns with **Apps** selected in Desk, or with the Statistics
-shortcut selected in the other themes. Dates and figures on Statistics have no
-tap action.
+from the Home menu in the other themes. Use the chart icon in Cover Grid or the
+**Reading** card in the Coverflow apps sheet. Back or the Home gesture returns
+to the covers with the sheet closed in Coverflow. Desk selects **Apps** and the
+other themes select the Statistics shortcut. Dates and figures on Statistics
+have no tap action.
 
 The grid distinguishes no reading, reading below the recorded daily goal,
 meeting the goal, and an hour or more on a goal day. Its legend explains the

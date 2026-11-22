@@ -305,6 +305,8 @@ size_t countBaseSettings();
 // run at load time, so the base list keeps these keys persisted.
 inline bool isHiddenOnDevice(const SettingInfo& s) {
   switch (s.nameId) {
+    case StrId::STR_COVERFLOW_PROGRESS:
+      return !UITheme::hasCoverflowHome();
     // Frontlit and lightless variants of a board share one binary (EEGO A4);
     // presence is the I2C probe result from Frontlight.begin(). The slide
     // switch's position owns its bound function (the light at boot too).
