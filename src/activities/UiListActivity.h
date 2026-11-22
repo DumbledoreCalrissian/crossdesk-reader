@@ -65,8 +65,10 @@ class UiListActivity : public Activity, protected UiAppHost {
   // The button-navigation tail of loop(): press steps the selection, hold
   // jumps by page. UiTabListActivity replaces it with the ring walk.
   virtual void navigateButtons();
-  // Without a Confirm key the selection is useless: Up/Down scroll by page.
+  // Without a Confirm key the selection is useless: Up/Down scroll by page
+  // unless the list fits.
   void scrollButtons();
+  bool listFits();
   // First hook in loop(); return true when the pass is consumed (popups, extra
   // buttons, gestures). Runs before the base button handling.
   virtual bool handleCustomInput() { return false; }

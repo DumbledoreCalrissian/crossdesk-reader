@@ -73,6 +73,19 @@ int main() {
     activity.syncListViewport(screen, props, offset);
     assert(props.selectedIndex == shown);
   }
+
+  // Without a Confirm key the hidden selection is never drawn; that must not
+  // make the follow scroll a list that fits (a return into a settings list).
+  UiListActivity activity;
+  UiScreen screen;
+  fui::ListProps props;
+  activity.count = 4;
+  activity.mappedInput.confirm = false;
+  activity.nav.reset(2);
+  activity.syncListViewport(screen, props);
+  assert(props.selectedIndex == -1 && !activity.nav.followPending);
+  activity.nav.onListRendered(props.topIndex, 4, false);
+  assert(!activity.nav.consumeRebuildNeeded() && activity.nav.top == 0);
 }
 """
 with tempfile.TemporaryDirectory() as directory:

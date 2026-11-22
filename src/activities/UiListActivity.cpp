@@ -179,6 +179,7 @@ void UiListActivity::loop() {
   // off-screen) and button navigation pulls the view back to it.
   const auto swipe = mappedInput.wasSwipe();
   if (swipe == MappedInputManager::SwipeDir::Up || swipe == MappedInputManager::SwipeDir::Down) {
+    if (listFits()) return;
     auto& n = activeNav();
     const int delta = swipe == MappedInputManager::SwipeDir::Up ? n.inputPageRows() : -n.inputPageRows();
     LOG_DBG("LIST", "%s swipe delta=%d count=%d", name.c_str(), delta, listCount());
@@ -194,11 +195,16 @@ void UiListActivity::loop() {
   navigateButtons();
 }
 
+// A list that fits has nothing to scroll; skip the e-ink refresh.
+bool UiListActivity::listFits() {
+  auto& n = activeNav();
+  return n.top == 0 && n.inputPageRows() >= listCount();
+}
+
 void UiListActivity::scrollButtons() {
   const auto scroll = [this](const int pages) {
+    if (listFits()) return;
     auto& n = activeNav();
-    // A list that fits has nothing to scroll; skip the e-ink refresh.
-    if (n.top == 0 && n.inputPageRows() >= listCount()) return;
     n.requestScroll(pages * n.inputPageRows());
     requestUpdate();
   };
@@ -249,7 +255,12 @@ void UiListActivity::syncListViewport(UiScreen& screen, fui::ListProps& props, c
       props.topIndex = static_cast<uint16_t>(prevTop);
     }
   }
-  if (!markSelection && !mappedInput.hasConfirmButton()) props.selectedIndex = -1;
+  if (!markSelection && !mappedInput.hasConfirmButton()) {
+    // No highlight to show, so nothing to follow: with -1 the list reports
+    // the selection as not drawn and the follow would scroll a list that fits.
+    props.selectedIndex = -1;
+    n.followPending = false;
+  }
 }
 
 void UiListActivity::drawChrome() {
