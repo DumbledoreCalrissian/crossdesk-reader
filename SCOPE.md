@@ -23,7 +23,7 @@ request and implementation; ask the owner only when the answer remains unclear.
 - EPUB reading, Library, typography, bookmarks, dictionary and clippings.
 - Maintenance of the existing Todo, foreground Pomodoro and Sudoku applications,
   including their storage, navigation and Sudoku pack downloads.
-- EPUB reading statistics on Picco, within the milestones below.
+- Reading statistics on Picco for EPUB, TXT, Markdown and XTC, within the milestones below.
 - The Desk Home theme (owner approved, 14 November 2026) with the widgets
   authorized below, and the Coverflow Home theme described below. Other new
   themes still need their own owner request.
@@ -46,12 +46,23 @@ Milestones 1 to 3 are complete (`119344fb`, `99b6a4d4`, `11afc67b`): a
 collector with recoverable per-book storage, EPUB reader collection with a
 book-statistics/reset view, and EPUB percentages in Library and progress/time
 on Home across the existing themes. Further statistics work needs a new owner
-request. The per-book collector (`EpubReadingStats`) is the only measure of
+request. The per-book collector (`EpubReadingStats`, renamed
+`BookReadingStats`) is the only measure of
 reading time in this fork; other features reuse it rather than measuring again.
+
+### All formats (owner approved, 23 November 2026)
+
+On Picco, the same collector, per-book store and reading calendar also cover
+TXT, Markdown and XTC/XTCH books. Book identity stays the file path; stored
+records keep their current format. The book-statistics view shows time, forward
+turns and percent where they are honest (XTC also "page N of M") and hides or
+marks the rest as not available. No new settings, screens, totals or sync
+services. Details and milestones: workspace
+`qa-artifacts/reading-stats-all-formats/PLAN.md`.
 
 ### Desk reading calendar (owner approved, 14 November 2026)
 
-On Picco, record qualifying EPUB reading durations by trusted local date for a
+On Picco, record qualifying reading durations by trusted local date for a
 bounded 366-day history. Desk Home may show a monthly calendar, total minutes
 read in the current month, and consecutive days meeting the daily reading goal.
 Monthly minutes include qualifying reading on days below the goal. The goal
@@ -65,12 +76,11 @@ This is a narrow exception to the calendar/aggregation exclusions below, not
 authorization for session counts, other totals screens or services. Weather has
 its own authorization below.
 
-No statistics integration for XTC, TXT or Markdown, and no additional device
-validation target is required. No overall totals/settings page, aggregation,
+No additional device validation target is required. No overall totals/settings page, aggregation,
 calendar/session counts, estimates, database or background service. New themes,
 a carousel and Home navigation redesign are separate requests, not dependencies
-or later statistics milestones. Shared EpubReaderActivity also handles other
-formats; gate statistics on actual EPUB paths.
+or later statistics milestones. Shared EpubReaderActivity also handles TXT and
+Markdown; gate statistics on reflowable book paths, not on images or other files.
 
 ### Reading statistics page (owner approved, 15 November 2026)
 
