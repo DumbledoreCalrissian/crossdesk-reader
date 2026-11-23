@@ -8,7 +8,6 @@
 #include <array>
 #include <cstring>
 #include <filesystem>
-#include <functional>
 #include <memory>
 #include <set>
 #include <sstream>
@@ -19,6 +18,7 @@
 #include "src/activities/settings/TextSettingsPreview.h"
 #include "src/clippings/ClippingText.h"
 #include "src/util/ParagraphIndentMigration.h"
+#include "test/ScopedTempDir.h"
 
 #define class struct
 #define private public
@@ -82,15 +82,14 @@ class ChapterHtmlSlimParserTest : public ::testing::TestWithParam<const char*> {
   // clipping does: '\n' at a paragraph start, ' ' across a source gap, nothing otherwise.
   std::string parseToParagraphText(const std::string& body) {
     const std::string html = "<html><body>" + body + "</body></html>";
-    const std::string testId = std::to_string(std::hash<std::string>{}(html));
-    const auto tempDir = std::filesystem::temp_directory_path();
-    filepath = (tempDir / ("crosspoint-clipping-paragraphs-" + testId + ".xhtml")).string();
+    const ScopedTempDir tempDir;
+    filepath = (tempDir.path() / "clipping-paragraphs.xhtml").string();
     {
       HalFile file;
       EXPECT_TRUE(file.open(filepath.c_str(), "wb"));
       EXPECT_EQ(file.write(html.data(), html.size()), html.size());
     }
-    const auto cachePath = (tempDir / ("crosspoint-clipping-paragraphs-" + testId + ".bin")).string();
+    const auto cachePath = (tempDir.path() / "clipping-paragraphs.bin").string();
     std::string selected;
     uint32_t previousEnd = 0;
     bool paragraphStartPending = false;
@@ -121,8 +120,6 @@ class ChapterHtmlSlimParserTest : public ::testing::TestWithParam<const char*> {
     };
     parser.paragraphIndentSpaces = 0;
     EXPECT_TRUE(parser.parseAndBuildPages());
-    std::filesystem::remove(filepath);
-    std::filesystem::remove(cachePath);
     return selected;
   }
 };
@@ -180,8 +177,8 @@ TEST_F(ChapterHtmlSlimParserTest, StreamsGifDimensionsWithoutExtractingPayload) 
   parser.epub = std::make_shared<Epub>();
   parser.epub->imageBytes = {'G', 'I', 'F', '8', '9', 'a', 1, 0, 1, 0};
   parser.imageRendering = 0;
-  const auto imagePath = std::filesystem::temp_directory_path() / "crosspoint-gif-probe-0.gif";
-  std::filesystem::remove(imagePath);
+  const ScopedTempDir tempDir;
+  const auto imagePath = tempDir.path() / "gif-probe-0.gif";
   parser.imageBasePath = imagePath.string().substr(0, imagePath.string().size() - 5);
   Epub::enableGifProbeForTest = true;
   const char* attrs[] = {"src", "probe.gif", nullptr};
@@ -190,7 +187,6 @@ TEST_F(ChapterHtmlSlimParserTest, StreamsGifDimensionsWithoutExtractingPayload) 
   EXPECT_EQ(parser.epub->headerProbes, 1u);
   EXPECT_EQ(parser.epub->fullExtractions, 0u);
   EXPECT_FALSE(std::filesystem::exists(imagePath));
-  std::filesystem::remove(imagePath);
 }
 
 TEST_F(ChapterHtmlSlimParserTest, AbandonedLayoutStopsExtractingLines) {
@@ -214,9 +210,8 @@ TEST_P(ParserStopTest, PageCallbackStopsParsingAndClosesFile) {
   std::string html = "<html><body>";
   for (int i = 0; i < 100; ++i) html += GetParam();
   html += "</body></html>";
-  // One file per parameter: ctest runs the instances in parallel.
-  const std::string testId = std::to_string(std::hash<std::string>{}(html));
-  filepath = (std::filesystem::temp_directory_path() / ("crosspoint-parser-stop-" + testId + ".xhtml")).string();
+  const ScopedTempDir tempDir;
+  filepath = (tempDir.path() / "parser-stop.xhtml").string();
   {
     HalFile file;
     ASSERT_TRUE(file.open(filepath.c_str(), "wb"));
@@ -238,7 +233,6 @@ TEST_P(ParserStopTest, PageCallbackStopsParsingAndClosesFile) {
   EXPECT_EQ(renderer.fontPreparations, fontPreparationsAtStop);
   EXPECT_EQ(parser.xmlParser_, nullptr);
   EXPECT_FALSE(parser.parseFile_.isOpen());
-  std::filesystem::remove(filepath);
 }
 
 INSTANTIATE_TEST_SUITE_P(
@@ -420,7 +414,8 @@ TEST_F(ChapterHtmlSlimParserTest, BlockFontScaleInheritsAndUsesHeadingDefaults) 
 }
 
 TEST_F(ChapterHtmlSlimParserTest, PageImageDeserializeRejectsMissingImageBlock) {
-  const auto path = std::filesystem::temp_directory_path() / "crosspoint-missing-image-cache.bin";
+  const ScopedTempDir tempDir;
+  const auto path = tempDir.path() / "missing-image-cache.bin";
   {
     HalFile output;
     ASSERT_TRUE(output.open(path.c_str(), "wb"));
@@ -893,7 +888,8 @@ TEST_F(ChapterBlockDecorationTest, InheritUsesSemanticParentEmphasisAndRestoresS
 }
 
 TEST_F(ChapterBlockDecorationTest, FontInheritanceUsesWinningCssRuleBeforeInlineOverride) {
-  const auto path = std::filesystem::temp_directory_path() / "crosspoint-font-inheritance.css";
+  const ScopedTempDir tempDir;
+  const auto path = tempDir.path() / "font-inheritance.css";
   {
     HalFile output;
     ASSERT_TRUE(output.open(path.c_str(), "wb"));
@@ -908,7 +904,6 @@ TEST_F(ChapterBlockDecorationTest, FontInheritanceUsesWinningCssRuleBeforeInline
     ASSERT_TRUE(input.open(path.c_str(), "rb"));
     ASSERT_EQ(cssParser.loadFromStream(input), CssParser::ParseResult::Complete);
   }
-  std::filesystem::remove(path);
   open("body", "font-weight:normal;font-style:normal");
   const XML_Char* inherited[] = {"id", "inherited", "class", "inherited", nullptr};
   ChapterHtmlSlimParser::startElement(&parser, "p", inherited);
@@ -1136,7 +1131,8 @@ TEST_F(ChapterBlockDecorationTest, MultiWordSpanStaysText) {
 }
 
 TEST_F(ChapterBlockDecorationTest, FirstLetterRuleCapturesQuoteAndLetter) {
-  const auto cssPath = std::filesystem::temp_directory_path() / "crosspoint-first-letter.css";
+  const ScopedTempDir tempDir;
+  const auto cssPath = tempDir.path() / "first-letter.css";
   {
     HalFile output;
     ASSERT_TRUE(output.open(cssPath.c_str(), "wb"));
@@ -1158,7 +1154,6 @@ TEST_F(ChapterBlockDecorationTest, FirstLetterRuleCapturesQuoteAndLetter) {
   const auto caps = elementsWithTag(TAG_PageDropCap);
   ASSERT_EQ(caps.size(), 1u);
   EXPECT_STREQ(static_cast<const PageDropCap*>(caps[0])->getText(), "\xe2\x80\x9cI");
-  std::filesystem::remove(cssPath);
 }
 
 // A drop cap draws codepoints one by one; Indic text must shape as a whole word.
@@ -1178,7 +1173,8 @@ TEST_F(ChapterBlockDecorationTest, IndicFloatedSpanStaysText) {
 }
 
 TEST_F(ChapterBlockDecorationTest, IndicFirstLetterRuleKeepsQuoteAndClusterInWord) {
-  const auto cssPath = std::filesystem::temp_directory_path() / "crosspoint-first-letter-indic.css";
+  const ScopedTempDir tempDir;
+  const auto cssPath = tempDir.path() / "first-letter-indic.css";
   {
     HalFile output;
     ASSERT_TRUE(output.open(cssPath.c_str(), "wb"));
@@ -1206,7 +1202,6 @@ TEST_F(ChapterBlockDecorationTest, IndicFirstLetterRuleKeepsQuoteAndClusterInWor
   EXPECT_STREQ(opening.wordText(0), "\xe2\x80\x9c\xe0\xa6\x95\xe0\xa6\xbf");
   // The restored quote keeps its own source offset, right after "Before here", not the previous word's.
   EXPECT_EQ(opening.wordSourceRange(0).start, before.wordSourceRange(before.wordCount() - 1).end);
-  std::filesystem::remove(cssPath);
 }
 
 TEST_F(ChapterBlockDecorationTest, BorderedBlockFramesItsTextAndInsetsIt) {
@@ -1489,7 +1484,8 @@ TEST_F(ChapterInlineSizeTest, MixedSizesWithinALineSurviveTheCache) {
   EXPECT_EQ(block.wordFontId(1, NOTOSANS_14_FONT_ID), NOTOSANS_12_FONT_ID);
   EXPECT_EQ(block.wordFontId(3, NOTOSANS_14_FONT_ID), NOTOSANS_16_FONT_ID);
 
-  const auto path = std::filesystem::temp_directory_path() / "crosspoint-word-fonts.bin";
+  const ScopedTempDir tempDir;
+  const auto path = tempDir.path() / "word-fonts.bin";
   {
     HalFile output;
     ASSERT_TRUE(output.open(path.c_str(), "wb"));
@@ -1502,7 +1498,6 @@ TEST_F(ChapterInlineSizeTest, MixedSizesWithinALineSurviveTheCache) {
   for (uint16_t i = 0; i < block.wordCount(); ++i) {
     EXPECT_EQ(cached->wordFontId(i, NOTOSANS_14_FONT_ID), block.wordFontId(i, NOTOSANS_14_FONT_ID));
   }
-  std::filesystem::remove(path);
 }
 
 TEST_F(ChapterBlockDecorationTest, SdAndVectorFontsSizeThroughTheVariantProvider) {
@@ -1544,7 +1539,8 @@ TEST_F(ChapterInlineSizeTest, UniformLinesCarryNoWordFonts) {
 
 TEST_F(ChapterTableBorderTest, ScansColumnWidthsFromMarkup) {
   renderer.sdFont = true;
-  const auto path = std::filesystem::temp_directory_path() / "crosspoint-table-scan.xhtml";
+  const ScopedTempDir tempDir;
+  const auto path = tempDir.path() / "table-scan.xhtml";
   {
     HalFile output;
     ASSERT_TRUE(output.open(path.c_str(), "wb"));
@@ -1573,7 +1569,6 @@ TEST_F(ChapterTableBorderTest, ScansColumnWidthsFromMarkup) {
   parser.planTableColumns(measure);
   EXPECT_EQ(parser.tableColumnWidths[0], 16 + 8);
   EXPECT_EQ(parser.tableColumnWidths[1], 200 - 24);
-  std::filesystem::remove(path);
 }
 
 TEST_F(ChapterTableBorderTest, RowsUsePlannedColumnWidths) {
@@ -2152,7 +2147,8 @@ TEST(TextSpacingLayout, CachedPageRestoresSpacing) {
   ParsedText text(false, false, style);
   text.addWord("一二三", EpdFontFamily::REGULAR);
   text.addWord("四五", EpdFontFamily::REGULAR);
-  const auto path = (std::filesystem::temp_directory_path() / "crosspoint-text-spacing.bin").string();
+  const ScopedTempDir tempDir;
+  const auto path = (tempDir.path() / "text-spacing.bin").string();
   unsigned lines = 0;
   text.layoutAndExtractLines(
       renderer, 0, 200,
@@ -2182,7 +2178,6 @@ TEST(TextSpacingLayout, CachedPageRestoresSpacing) {
       },
       true, -2, 50);
   EXPECT_EQ(lines, 1u);
-  std::filesystem::remove(path);
 }
 
 TEST_F(ChapterHtmlSlimParserTest, ParserAppliesTextSpacingToParagraphs) {

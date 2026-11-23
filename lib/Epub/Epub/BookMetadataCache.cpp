@@ -460,39 +460,57 @@ void BookMetadataCache::createTocEntry(const std::string& title, const std::stri
 /* ============= READING / LOADING FUNCTIONS ================ */
 
 bool BookMetadataCache::load() {
+  loaded = false;
   if (!Storage.openFileForRead("BMC", cachePath + bookBinFile, bookFile)) {
     return false;
   }
 
-  uint8_t version;
-  serialization::readPod(bookFile, version);
-  if (version != BOOK_CACHE_VERSION) {
-    LOG_DBG("BMC", "Cache version mismatch: expected %d, got %d", BOOK_CACHE_VERSION, version);
+  const auto rejectCache = [&] {
     // Explicit close() required: member variable persists beyond function scope
     bookFile.close();
     return false;
+  };
+  uint8_t version = 0;
+  if (!serialization::tryReadPod(bookFile, version) || version != BOOK_CACHE_VERSION) {
+    LOG_DBG("BMC", "Cache version mismatch: expected %d, got %d", BOOK_CACHE_VERSION, version);
+    return rejectCache();
   }
 
-  serialization::readPod(bookFile, lutOffset);
-  serialization::readPod(bookFile, spineCount);
-  serialization::readPod(bookFile, tocCount);
+  if (!serialization::tryReadPod(bookFile, lutOffset) || !serialization::tryReadPod(bookFile, spineCount) ||
+      !serialization::tryReadPod(bookFile, tocCount)) {
+    return rejectCache();
+  }
 
-  serialization::readString(bookFile, coreMetadata.title);
-  serialization::readString(bookFile, coreMetadata.author);
-  serialization::readString(bookFile, coreMetadata.language);
-  serialization::readString(bookFile, coreMetadata.coverItemHref);
-  serialization::readString(bookFile, coreMetadata.textReferenceHref);
+  const size_t fileSize = bookFile.size();
+  const uint32_t lutSize = (static_cast<uint32_t>(spineCount) + tocCount) * sizeof(uint32_t);
+  if (lutOffset > fileSize || lutSize > fileSize - lutOffset) {
+    return rejectCache();
+  }
+  const auto readMetadata = [&](std::string& value) {
+    const size_t pos = bookFile.position();
+    return pos <= lutOffset && lutOffset - pos >= sizeof(uint32_t) &&
+           serialization::tryReadString(bookFile, value, lutOffset - pos - sizeof(uint32_t));
+  };
+  if (!readMetadata(coreMetadata.title) || !readMetadata(coreMetadata.author) || !readMetadata(coreMetadata.language) ||
+      !readMetadata(coreMetadata.coverItemHref) || !readMetadata(coreMetadata.textReferenceHref) ||
+      bookFile.position() != lutOffset || !bookFile.seek(static_cast<size_t>(lutOffset) + lutSize)) {
+    return rejectCache();
+  }
 
   // Spine entries follow the LUTs in index order; keep every SIZE_WINDOW-th cumulative size.
   windowStarts.clear();
   bookSize = 0;
   windowFirst = -1;
   windowStarts.reserve((spineCount + SIZE_WINDOW - 1) / SIZE_WINDOW);
-  const uint32_t lutSize = (static_cast<uint32_t>(spineCount) + tocCount) * sizeof(uint32_t);
-  bookFile.seek(lutOffset + lutSize);
   for (uint16_t i = 0; i < spineCount; i++) {
     if (i % SIZE_WINDOW == 0) windowStarts.push_back(bookSize);
-    bookSize = readSpineEntry(bookFile).cumulativeSize;
+    uint32_t hrefLen;
+    int16_t tocIndex;
+    if (!serialization::tryReadPod(bookFile, hrefLen) || hrefLen > fileSize - bookFile.position() ||
+        !bookFile.seekCur(hrefLen) || !serialization::tryReadPod(bookFile, bookSize) ||
+        !serialization::tryReadPod(bookFile, tocIndex)) {
+      return rejectCache();
+    }
   }
 
   loaded = true;
