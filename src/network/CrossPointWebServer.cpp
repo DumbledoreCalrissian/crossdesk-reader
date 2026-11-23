@@ -2598,9 +2598,8 @@ void CrossPointWebServer::handleFetch() {
 
   size_t written = requestedOffset;
   size_t nextHeapLog = written;
-  bool sdFull = false;
+  bool sdWriteFailed = false;
   bool segmentBoundary = false;
-  bool rangeUnsupported = false;
   const unsigned long fetchStartedAt = millis();
   unsigned long lastBrowserHeartbeat = fetchStartedAt;
   bool browserResponseStarted = false;
@@ -2639,7 +2638,7 @@ void CrossPointWebServer::handleFetch() {
     resetTaskWatchdogIfSubscribed();
     const size_t writeLen = segmentLimit > 0 ? std::min(len, requestedOffset + segmentLimit - written) : len;
     if (file.write(data, writeLen) != writeLen) {
-      sdFull = true;
+      sdWriteFailed = true;
       return false;
     }
     written += writeLen;
@@ -2659,15 +2658,17 @@ void CrossPointWebServer::handleFetch() {
     return true;
   };
   sink.rewind = [&] {
-    // Range ignored: the body restarts from byte 0, which only a transfer
-    // that has not yet reported progress to the browser can follow.
+    // Range ignored: the body restarts from byte 0, so rewrite the .part from
+    // this one response. A later segment would restart again, so finish the
+    // whole body in this request.
     if (requestedOffset > 0) {
-      rangeUnsupported = true;
-      return false;
+      LOG_INF("WEB", "Fetch Range ignored at %u; downloading the whole body", (unsigned)requestedOffset);
+      segmentLimit = 0;
     }
-    file.close();
     written = 0;
-    return Storage.openFileForWrite("PLG", part, file);
+    nextHeapLog = 0;
+    sdWriteFailed = !file.close() || !Storage.openFileForWrite("PLG", part, file);
+    return !sdWriteFailed;
   };
   // A failed single request's first bytes, so the plugin can tell why. The
   // resumable GET's transport discards error bodies.
@@ -2729,29 +2730,29 @@ void CrossPointWebServer::handleFetch() {
           feedWatchdog);
       result.bytes = written;
       result.total = http.hasContentLength() ? http.getContentLength() : 0;
-      result.stopped = sdFull;
-      result.complete = result.status >= 200 && result.status < 300 && http.responseComplete() && !sdFull;
+      result.stopped = sdWriteFailed;
+      result.complete = result.status >= 200 && result.status < 300 && http.responseComplete() && !sdWriteFailed;
     } else {
       result.status = -1;
     }
   }
-  if (file.isOpen()) {
-    file.flush();
-    file.close();
-  }
+  // Closing writes the final size. Only a saved stage can resume or install.
+  if (file.isOpen() && !file.close()) sdWriteFailed = true;
   const int status = result.status;
   const size_t totalExpected = result.total;
-  bool complete = result.complete || (segmentBoundary && totalExpected > 0 && written >= totalExpected);
+  // An empty 200 on resume cannot replace a download that already had bytes.
+  bool complete = !sdWriteFailed && (requestedOffset == 0 || written > 0) &&
+                  (result.complete || (segmentBoundary && totalExpected > 0 && written >= totalExpected));
 
   const bool ok2xx = status >= 200 && status < 300;
   // A bounded segment ended mid-body: the browser requests the next one, so
   // the .part stays and nothing is installed yet.
-  const bool midSegment = segmentBoundary && !complete && ok2xx;
+  const bool midSegment = !sdWriteFailed && segmentBoundary && !complete && ok2xx;
 
   if (!complete && ok2xx && !midSegment) {
     Storage.remove(part.c_str());
     char msg[96];
-    const char* error = sdFull ? "sd write failed" : rangeUnsupported ? "range unsupported" : "download truncated";
+    const char* error = sdWriteFailed ? "sd write failed" : "download truncated";
     // complete:false matters once the heartbeat has committed HTTP 200 chunked:
     // it is the only signal fetchToSd()'s resume loop still sees on this path
     // (it then detects zero progress and throws instead of returning success).
@@ -2770,7 +2771,14 @@ void CrossPointWebServer::handleFetch() {
     errorBody.resize(utf8SafeTruncateBuffer(errorBody.data(), static_cast<int>(errorBody.size())));
     if (!errorBody.empty()) resp["body"] = errorBody;
   } else if (complete && !Storage.replaceFile(part.c_str(), dest.c_str())) {
-    Storage.remove(part.c_str());
+    if (Storage.exists(dest.c_str())) {
+      Storage.remove(part.c_str());
+    } else {
+      // On FAT the destination can disappear before the rename fails.
+      LOG_ERR("WEB", "Fetch replace failed; staged file kept: %s", part.c_str());
+      clearBookCache(dest.c_str());
+      if (library::isLibraryBookFile(dest)) library::markLibraryIndexDirty();
+    }
     complete = false;
     resp["error"] = "sd write failed";
   } else if (complete) {
