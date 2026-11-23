@@ -2,11 +2,15 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <string_view>
 #include <vector>
 
 struct RecentBook;
 
-// Saved book progress and EPUB/TXT/Markdown reading time, read once per Home visit.
+// Formats that keep per-book reading statistics: EPUB, TXT, Markdown and XTC.
+bool hasReadingStatistics(std::string_view path);
+
+// Saved book progress and reading time, read once per Home visit.
 struct BookReadingSummary {
   int percent = -1;  // saved position (see loadBookProgress), -1 when unavailable
   bool timeKnown = false;

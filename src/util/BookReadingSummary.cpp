@@ -13,11 +13,14 @@
 #include "ReadingStatsStore.h"
 #include "RecentBooksStore.h"
 
+bool hasReadingStatistics(const std::string_view path) {
+  return FsHelpers::hasReflowableBookExtension(path) || FsHelpers::hasXtcExtension(path);
+}
+
 namespace {
 BookReadingSummary loadSummary(const std::string& path, readingstats::Store* store, const bool includeOtherFormats) {
   BookReadingSummary summary;
-  // EPUB, TXT and Markdown have reading statistics; other formats only progress.
-  const bool hasStats = FsHelpers::hasReflowableBookExtension(path);
+  const bool hasStats = hasReadingStatistics(path);
   if (!hasStats && !includeOtherFormats) return summary;
   summary.percent = loadBookProgress(path, /*readOnly=*/true);
   if (!hasStats || !store) return summary;

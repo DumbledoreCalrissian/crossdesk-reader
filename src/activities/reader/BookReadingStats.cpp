@@ -78,14 +78,14 @@ void BookReadingStats::save(const uint32_t now, const bool force) {
   if (!unsaved() || !store.canSave() || (!force && now - lastCheckpoint < 60000)) return;
   lastCheckpoint = now;
   failedWrite = store.save(collector.totals()) != Status::Ok;
-  if (failedWrite) LOG_ERR("STATS", "EPUB statistics save failed; retaining pending totals");
+  if (failedWrite) LOG_ERR("STATS", "Book statistics save failed; retaining pending totals");
 }
 
 bool BookReadingStats::reset() {
   if (!store.canReset()) return false;
   if (store.reset() != Status::Ok) {
     failedWrite = true;
-    LOG_ERR("STATS", "EPUB statistics reset failed");
+    LOG_ERR("STATS", "Book statistics reset failed");
     return false;
   }
   calendarAccounted = 0;

@@ -10,7 +10,7 @@ app menu.
 
 Choose **Settings → Reader → Daily reading goal**. The default is 30 minutes;
 choices are 5, 10, 15, 20, 30, 45 and 60 minutes. Reading in short bursts adds up
-throughout the day, across EPUB, TXT and Markdown books. A calendar day is marked when its total
+throughout the day, across EPUB, TXT, Markdown and XTC books. A calendar day is marked when its total
 reaches the goal. Monthly minutes include qualifying reading on days below the
 goal, too, and are rounded down after adding the month's time.
 
@@ -20,8 +20,7 @@ and does not rewrite stored days. A streak continues across months; yesterday's 
 until today ends, giving you today to meet your goal.
 
 This uses the existing reading-time rules: visible-page stays of two seconds
-to five minutes count; menus, loading and longer idle stays do not. XTC
-reading is not counted yet. Daily history starts with this feature; old cumulative book totals
+to five minutes count; menus, loading and longer idle stays do not. Daily history starts with this feature; old cumulative book totals
 cannot reconstruct past reading dates. Resetting a book's statistics does not
 reset the calendar.
 

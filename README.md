@@ -90,11 +90,12 @@ same order. [Todo guide](docs/picco-todo.md)
 - [T9 keypad](USER_GUIDE.md#36-settings): a phone-style keypad for every text field, as an option to the
   full keyboard. Tap a key again to cycle its letters. Choose it in Settings >
   System > Keyboard type, and set its size with Keypad height.
-- [Reading statistics](docs/picco-reading-stats.md): Book statistics in the reader
-  menu for EPUB, TXT and Markdown (progress, reading time, forward page turns, and
-  a confirmed reset that keeps position and bookmarks). Library shows each opened
-  book's saved percentage. Home can show the current book's progress and reading
-  time.
+- [Reading statistics](docs/picco-reading-stats.md): Book statistics for EPUB,
+  TXT, Markdown and XTC/XTCH books (progress, reading time, forward page turns, and a
+  confirmed reset that keeps position and bookmarks). It is in the reader menu,
+  or at the top of the XTC chapter list. Library shows each opened EPUB, TXT or
+  Markdown book's saved percentage. Home can show the current book's progress
+  and reading time.
 - Monthly **Statistics**: a read-only page with one month of the reading
   calendar. Open it from Desk, the Coverflow Reading card or the other themes'
   Home menus. In Cover Grid, use the chart icon.

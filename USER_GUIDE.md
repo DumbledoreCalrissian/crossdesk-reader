@@ -293,7 +293,7 @@ Settings are grouped into **System**, **Display**, **Reader**, **Controls**, **L
 
 - **Coverflow Progress** (shown when Coverflow is selected): On by default. The
   line below the centre cover shows the title, a bar and percentage when saved
-  progress is available, and recorded reading time when available (EPUB, TXT and Markdown).
+  progress is available, and recorded reading time when available (EPUB, TXT, Markdown and XTC).
   On very narrow covers, the line shows the values that fit. Choose Off to hide
   the line and centre the cover.
 
@@ -779,6 +779,10 @@ Accessible by selecting **Chapters** from the Reader Menu.
 1. Use **Left** (or **Side Up**), or **Right** (or **Side Down**) to highlight the desired chapter.
 2. Press **Confirm** to jump to that chapter.
 3. *Alternatively, press **Back** to cancel and return to your current page.*
+
+In XTC and XTCH books, the menu tap opens this list directly. Its first row,
+**Book statistics**, shows progress (with the page number), reading time and
+forward page turns. A book without chapters shows only that row.
 
 ---
 

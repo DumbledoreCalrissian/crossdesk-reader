@@ -15,8 +15,12 @@ namespace fui = freeink::ui;
 XtcReaderChapterSelectionActivity::XtcReaderChapterSelectionActivity(GfxRenderer& renderer,
                                                                      MappedInputManager& mappedInput,
                                                                      const std::shared_ptr<Xtc>& xtc,
-                                                                     const uint32_t currentPage)
-    : UiListActivity("XtcReaderChapterSelection", renderer, mappedInput), xtc(xtc), currentPage(currentPage) {}
+                                                                     const uint32_t currentPage,
+                                                                     const bool statisticsRow)
+    : UiListActivity("XtcReaderChapterSelection", renderer, mappedInput),
+      xtc(xtc),
+      currentPage(currentPage),
+      statisticsRow(statisticsRow) {}
 
 int XtcReaderChapterSelectionActivity::findChapterIndexForPage(const uint32_t page) const {
   if (!xtc) {
@@ -41,7 +45,7 @@ void XtcReaderChapterSelectionActivity::onEnter() {
 
   // Open on the current chapter, which may sit past the first page; the first
   // screen build pulls the viewport to it (ListNav follow-on-build).
-  nav.selected = findChapterIndexForPage(currentPage);
+  nav.selected = findChapterIndexForPage(currentPage) + chapterOffset();
 }
 
 // Derives rowItems from the xtc's chapters. Called once from onEnter() since
@@ -49,7 +53,13 @@ void XtcReaderChapterSelectionActivity::onEnter() {
 void XtcReaderChapterSelectionActivity::buildRowItems() {
   const auto& chapters = xtc->getChapters();
   rowItems.clear();
-  rowItems.reserve(chapters.size());
+  rowItems.reserve(chapters.size() + chapterOffset());
+  if (statisticsRow) {
+    fui::ListItem item;
+    item.label = tr(STR_BOOK_STATISTICS);
+    item.actionValue = 0;
+    rowItems.push_back(item);
+  }
   for (const auto& chapter : chapters) {
     fui::ListItem item;
     item.label = chapter.name.empty() ? tr(STR_UNNAMED) : chapter.name.c_str();
@@ -62,10 +72,17 @@ void XtcReaderChapterSelectionActivity::activateIndex(const int index) {
   // The activated row leaves this screen (finish); a lingering flash would
   // gray an unrelated element on the next render.
   app.clearTapFlash();
-  const auto& chapters = xtc->getChapters();
-  if (!chapters.empty() && index >= 0 && index < static_cast<int>(chapters.size())) {
+  if (statisticsRow && index == 0) {
     nav.selected = index;
-    setResult(PageResult{chapters[index].startPage});
+    setResult(MenuResult{});
+    finish();
+    return;
+  }
+  const auto& chapters = xtc->getChapters();
+  const int chapter = index - chapterOffset();
+  if (!chapters.empty() && chapter >= 0 && chapter < static_cast<int>(chapters.size())) {
+    nav.selected = index;
+    setResult(PageResult{chapters[chapter].startPage});
     finish();
   }
 }
@@ -124,9 +141,12 @@ void XtcReaderChapterSelectionActivity::drawChrome() {
   const auto& metrics = UITheme::getInstance().getMetrics();
   const Rect safe = UITheme::getInstance().getScreenSafeArea(renderer, true, false);
 
-  // Centered title in the header band the content margin reserves.
-  const int titleWidth = renderer.getTextWidth(UI_12_FONT_ID, tr(STR_SELECT_CHAPTER), EpdFontFamily::BOLD);
+  // Centered title in the header band the content margin reserves. A book
+  // without chapters shows only the statistics row.
+  const bool hasChapters = xtc && !xtc->getChapters().empty();
+  const char* title = hasChapters || !statisticsRow ? tr(STR_SELECT_CHAPTER) : tr(STR_BOOK_STATISTICS);
+  const int titleWidth = renderer.getTextWidth(UI_12_FONT_ID, title, EpdFontFamily::BOLD);
   const int titleX = safe.x + (safe.width - titleWidth) / 2;
   const int titleY = safe.y + metrics.topPadding + (metrics.headerHeight - renderer.getLineHeight(UI_12_FONT_ID)) / 2;
-  renderer.drawText(UI_12_FONT_ID, titleX, titleY, tr(STR_SELECT_CHAPTER), true, EpdFontFamily::BOLD);
+  renderer.drawText(UI_12_FONT_ID, titleX, titleY, title, true, EpdFontFamily::BOLD);
 }

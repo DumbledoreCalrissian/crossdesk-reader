@@ -25,6 +25,7 @@
 #include <limits>
 
 #include "../../util/BookmarkFile.h"
+#include "BookStatisticsActivity.h"
 #include "BookmarkEntry.h"
 #include "ChapterBuildGate.h"
 #include "ClipSelectionActivity.h"
@@ -32,7 +33,6 @@
 #include "CrossPointSettings.h"
 #include "CrossPointState.h"
 #include "DictionaryWordSelectActivity.h"
-#include "EpubBookStatisticsActivity.h"
 #include "EpubReaderBookmarksActivity.h"
 #include "EpubReaderChapterSelectionActivity.h"
 #include "EpubReaderClippingListActivity.h"
@@ -61,6 +61,7 @@
 #include "fontIds.h"
 #include "sync/ReadingSessionLog.h"
 #include "sync/SyncEngine.h"
+#include "util/BookReadingSummary.h"
 #include "util/BookmarkUtil.h"
 #include "util/ButtonNavigator.h"
 #include "util/ScreenshotUtil.h"
@@ -240,9 +241,7 @@ ClipSelectionActivity::Selection lookupReturnSelectionFor(const ClippingResult& 
 
 bool EpubReaderActivity::isEpubBook() const { return FsHelpers::hasEpubExtension(std::string_view(bookPath)); }
 
-bool EpubReaderActivity::hasReadingStats() const {
-  return FsHelpers::hasReflowableBookExtension(std::string_view(bookPath));
-}
+bool EpubReaderActivity::hasReadingStats() const { return hasReadingStatistics(bookPath); }
 
 void EpubReaderActivity::pauseStatistics() {
   RenderLock lock;
@@ -1315,10 +1314,9 @@ void EpubReaderActivity::onReaderMenuConfirm(EpubReaderMenuActivity::MenuAction 
       pauseStatistics();
       const auto position = chapterPosition();
       const int percent = position.hasTotal() && epub->getBookSize() > 0 ? bookPercentFor(position) : -1;
-      auto view =
-          makeUniqueNoThrow<EpubBookStatisticsActivity>(renderer, mappedInput, readingStatistics.get(), percent);
+      auto view = makeUniqueNoThrow<BookStatisticsActivity>(renderer, mappedInput, readingStatistics.get(), percent);
       if (!view) {
-        LOG_ERR("STATS", "Allocation failed: %u bytes", unsigned(sizeof(EpubBookStatisticsActivity)));
+        LOG_ERR("STATS", "Allocation failed: %u bytes", unsigned(sizeof(BookStatisticsActivity)));
         break;
       }
       startActivityForResult(std::move(view), [this](const ActivityResult&) { openReaderMenu(); });

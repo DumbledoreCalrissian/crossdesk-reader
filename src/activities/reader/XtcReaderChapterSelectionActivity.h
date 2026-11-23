@@ -9,6 +9,9 @@
 class XtcReaderChapterSelectionActivity final : public UiListActivity {
   std::shared_ptr<Xtc> xtc;
   uint32_t currentPage = 0;
+  // Row 0 opens Book statistics (MenuResult) instead of a chapter (PageResult).
+  bool statisticsRow = false;
+  int chapterOffset() const { return statisticsRow ? 1 : 0; }
 
   // Row buffer, built once in onEnter() (chapters never change for the
   // lifetime of this screen) and reused by buildScreen() on every repaint
@@ -16,7 +19,7 @@ class XtcReaderChapterSelectionActivity final : public UiListActivity {
   std::vector<freeink::ui::ListItem> rowItems;
   void buildRowItems();
 
-  int listCount() const override { return xtc ? static_cast<int>(xtc->getChapters().size()) : 0; }
+  int listCount() const override { return xtc ? static_cast<int>(xtc->getChapters().size()) + chapterOffset() : 0; }
   void buildScreen(UiScreen& screen) override;
   void activateIndex(int index) override;
   // Back cancels with a result and Confirm activates on RELEASE here; a `!xtc`
@@ -27,6 +30,6 @@ class XtcReaderChapterSelectionActivity final : public UiListActivity {
 
  public:
   explicit XtcReaderChapterSelectionActivity(GfxRenderer& renderer, MappedInputManager& mappedInput,
-                                             const std::shared_ptr<Xtc>& xtc, uint32_t currentPage);
+                                             const std::shared_ptr<Xtc>& xtc, uint32_t currentPage, bool statisticsRow);
   void onEnter() override;
 };

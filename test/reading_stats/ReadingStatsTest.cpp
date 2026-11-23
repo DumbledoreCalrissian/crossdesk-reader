@@ -524,7 +524,7 @@ TEST_F(EpubStatistics, DeterministicSequencePersistsAfterRestart) {
   EXPECT_EQ(restarted.totals(), stats.totals());
 }
 
-TEST_F(EpubStatistics, TxtAndMarkdownKeepSeparateRecords) {
+TEST_F(EpubStatistics, OtherFormatsKeepSeparateRecords) {
   constexpr const char* TXT = "/books/notes.txt";
   constexpr const char* MD = "/books/notes.md";
   {
@@ -538,8 +538,10 @@ TEST_F(EpubStatistics, TxtAndMarkdownKeepSeparateRecords) {
   }
   BookReadingStats txt(TXT, 0);
   BookReadingStats md(MD, 0);
+  BookReadingStats xtc("/books/notes.xtc", 0);
   BookReadingStats epub(BOOK, 0);
   EXPECT_EQ(txt.totals(), (Totals{5000, 1}));
+  EXPECT_EQ(xtc.totals(), (Totals{}));
   EXPECT_EQ(md.totals(), (Totals{3000, 0}));
   EXPECT_EQ(epub.totals(), (Totals{}));
 }

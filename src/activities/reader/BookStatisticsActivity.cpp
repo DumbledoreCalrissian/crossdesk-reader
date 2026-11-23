@@ -1,15 +1,28 @@
-#include "EpubBookStatisticsActivity.h"
+#include "BookStatisticsActivity.h"
 
 #include <I18n.h>
 
 #include <cstdio>
+#include <cstring>
 
-void EpubBookStatisticsActivity::onEnter() {
+void BookStatisticsActivity::onEnter() {
   Activity::onEnter();
   showSummary();
 }
 
-void EpubBookStatisticsActivity::showSummary() {
+void BookStatisticsActivity::formatProgress(char* out, const size_t size) const {
+  if (percent >= 0)
+    snprintf(out, size, tr(STR_STATS_PROGRESS), percent);
+  else
+    snprintf(out, size, "%s", tr(STR_STATS_PROGRESS_UNAVAILABLE));
+  if (page > 0 && pageCount > 0) {
+    const size_t used = strlen(out);
+    snprintf(out + used, size - used, " (%lu/%lu)", static_cast<unsigned long>(page),
+             static_cast<unsigned long>(pageCount));
+  }
+}
+
+void BookStatisticsActivity::showSummary() {
   RenderLock lock;
   confirmingReset = false;
   std::string message;
@@ -18,10 +31,7 @@ void EpubBookStatisticsActivity::showSummary() {
     const auto seconds = totals.readingMilliseconds / 1000;
     char summary[128];
     char progress[48];
-    if (percent >= 0)
-      snprintf(progress, sizeof(progress), tr(STR_STATS_PROGRESS), percent);
-    else
-      snprintf(progress, sizeof(progress), "%s", tr(STR_STATS_PROGRESS_UNAVAILABLE));
+    formatProgress(progress, sizeof(progress));
     snprintf(summary, sizeof(summary), tr(STR_STATS_SUMMARY), progress, static_cast<unsigned long long>(seconds / 3600),
              static_cast<unsigned long long>((seconds / 60) % 60), static_cast<unsigned long long>(seconds % 60),
              static_cast<unsigned long long>(totals.forwardTurns));
@@ -38,10 +48,7 @@ void EpubBookStatisticsActivity::showSummary() {
     }
   } else {
     char progress[48];
-    if (percent >= 0)
-      snprintf(progress, sizeof(progress), tr(STR_STATS_PROGRESS), percent);
-    else
-      snprintf(progress, sizeof(progress), "%s", tr(STR_STATS_PROGRESS_UNAVAILABLE));
+    formatProgress(progress, sizeof(progress));
     message = progress;
     message += ' ';
     if (statistics && statistics->writeFailed()) {
@@ -85,7 +92,7 @@ void EpubBookStatisticsActivity::showSummary() {
   requestUpdate();
 }
 
-void EpubBookStatisticsActivity::loop() {
+void BookStatisticsActivity::loop() {
   if (sleeping) return;
   if (pending == Action::None) {
     popup.handleInput(mappedInput, [this] { requestUpdate(); });
@@ -136,7 +143,7 @@ void EpubBookStatisticsActivity::loop() {
   }
 }
 
-void EpubBookStatisticsActivity::render(RenderLock&&) {
+void BookStatisticsActivity::render(RenderLock&&) {
   renderer.clearScreen();
   popup.processRender(renderer, mappedInput);
 }

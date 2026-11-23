@@ -8,6 +8,7 @@
 
 #include <algorithm>
 
+#include "BookStatisticsActivity.h"
 #include "CrossPointSettings.h"
 #include "ProgressFile.h"
 #include "ReaderActivity.h"
@@ -29,19 +30,76 @@ bool XtcReaderActivity::loadBook() {
   xtc = std::move(loadedXtc);
   xtc->setupCacheDir();
   loadProgress();
+  if (!readingStatistics) {
+    readingStatistics = makeUniqueNoThrow<BookReadingStats>(bookPath, millis());
+    if (!readingStatistics) LOG_ERR("STATS", "Allocation failed: %u bytes", unsigned(sizeof(BookReadingStats)));
+  }
   return true;
 }
 
-void XtcReaderActivity::openChapterSelection() {
-  if (xtc && xtc->hasChapters() && !xtc->getChapters().empty()) {
-    startActivityForResult(std::make_unique<XtcReaderChapterSelectionActivity>(renderer, mappedInput, xtc, currentPage),
-                           [this](const ActivityResult& result) {
-                             if (!result.isCancelled) {
-                               currentPage = std::get<PageResult>(result.data).page;
-                               requestUpdate();
-                             }
-                           });
+void XtcReaderActivity::onCovered() {
+  if (readingStatistics) readingStatistics->pause(millis());
+}
+
+void XtcReaderActivity::onExit() {
+  if (readingStatistics) readingStatistics->stop(millis());
+  ReaderActivity::onExit();
+}
+
+void XtcReaderActivity::prepareForSleep() {
+  if (readingStatistics) readingStatistics->stop(millis());
+  ReaderActivity::prepareForSleep();
+}
+
+void XtcReaderActivity::onEndOfBookRendered() {
+  if (readingStatistics) readingStatistics->completeNavigation(millis());
+}
+
+// Called with the render lock held, after a book page is on screen.
+void XtcReaderActivity::pageShownForStatistics() {
+  if (!readingStatistics) return;
+  readingStatistics->pageShown(millis(), statisticsPage == currentPage);
+  statisticsPage = currentPage;
+}
+
+void XtcReaderActivity::beginStatisticsNavigation(const bool forwardTurn) {
+  if (!readingStatistics) return;
+  RenderLock lock;
+  readingStatistics->beginNavigation(
+      millis(), forwardTurn ? BookReadingStats::Departure::ForwardTurn : BookReadingStats::Departure::Navigation);
+}
+
+void XtcReaderActivity::openBookStatistics() {
+  {
+    RenderLock lock;
+    if (readingStatistics) readingStatistics->pause(millis());
   }
+  const uint32_t pageCount = xtc->getPageCount();
+  const uint32_t page = pageCount > 0 && currentPage >= pageCount ? pageCount - 1 : currentPage;
+  const int percent = pageCount > 0 ? xtc->calculateProgress(page) : -1;
+  auto view = makeUniqueNoThrow<BookStatisticsActivity>(renderer, mappedInput, readingStatistics.get(), percent,
+                                                        pageCount > 0 ? page + 1 : 0, pageCount);
+  if (!view) {
+    LOG_ERR("STATS", "Allocation failed: %u bytes", unsigned(sizeof(BookStatisticsActivity)));
+    return;
+  }
+  startActivityForResult(std::move(view), [this](const ActivityResult&) { requestUpdate(); });
+}
+
+void XtcReaderActivity::openChapterSelection() {
+  const bool hasChapters = xtc && xtc->hasChapters() && !xtc->getChapters().empty();
+  if (!xtc || (!hasChapters && !readingStatistics)) return;
+  startActivityForResult(std::make_unique<XtcReaderChapterSelectionActivity>(renderer, mappedInput, xtc, currentPage,
+                                                                             readingStatistics != nullptr),
+                         [this](const ActivityResult& result) {
+                           if (result.isCancelled) return;
+                           if (std::holds_alternative<MenuResult>(result.data)) {
+                             openBookStatistics();
+                             return;
+                           }
+                           currentPage = std::get<PageResult>(result.data).page;
+                           requestUpdate();
+                         });
 }
 
 bool XtcReaderActivity::handleFormatInput() {
@@ -52,7 +110,8 @@ bool XtcReaderActivity::handleFormatInput() {
   // Enter chapter selection activity on Confirm release or touch menu gesture
   const bool touchMenu = ReaderUtils::isTouchMenuGesture(renderer, mappedInput);
   if (mappedInput.wasReleased(MappedInputManager::Button::Confirm) || touchMenu) {
-    if (touchMenu && xtc->hasChapters() && !xtc->getChapters().empty()) haptic_feedback::touchAction();
+    if (touchMenu && (readingStatistics || (xtc->hasChapters() && !xtc->getChapters().empty())))
+      haptic_feedback::touchAction();
     openChapterSelection();
     return true;
   }
@@ -160,6 +219,7 @@ void XtcReaderActivity::renderPage() {
     renderer.clearScreen();
     renderer.drawCenteredText(UI_12_FONT_ID, 300, tr(STR_MEMORY_ERROR), true, EpdFontFamily::BOLD);
     renderer.displayBuffer();
+    if (readingStatistics) readingStatistics->pause(millis());
     return;
   }
 
@@ -171,6 +231,7 @@ void XtcReaderActivity::renderPage() {
     renderer.clearScreen();
     renderer.drawCenteredText(UI_12_FONT_ID, 300, tr(STR_PAGE_LOAD_ERROR), true, EpdFontFamily::BOLD);
     renderer.displayBuffer();
+    if (readingStatistics) readingStatistics->pause(millis());
     return;
   }
 
@@ -258,6 +319,7 @@ void XtcReaderActivity::renderPage() {
 
     LOG_DBG("XTR", "Rendered page %lu/%lu (2-bit grayscale)", currentPage + 1, xtc->getPageCount());
     markPageRendered();
+    pageShownForStatistics();
     return;
   } else {
     const size_t srcRowBytes = (pageWidth + 7) / 8;
@@ -289,6 +351,7 @@ void XtcReaderActivity::renderPage() {
 
   LOG_DBG("XTR", "Rendered page %lu/%lu (%u-bit)", currentPage + 1, xtc->getPageCount(), bitDepth);
   markPageRendered();
+  pageShownForStatistics();
 }
 
 bool XtcReaderActivity::pageTurn(bool isForward) {
@@ -296,11 +359,13 @@ bool XtcReaderActivity::pageTurn(bool isForward) {
   if (isForward) {
     if (currentPage < xtc->getPageCount()) {
       currentPage++;
+      beginStatisticsNavigation(true);
       return true;
     }
   } else {
     if (currentPage > 0) {
       currentPage--;
+      beginStatisticsNavigation(false);
       return true;
     }
   }
@@ -314,6 +379,7 @@ bool XtcReaderActivity::skipPages(int amount) {
   if (newPage > static_cast<int>(xtc->getPageCount())) newPage = static_cast<int>(xtc->getPageCount());
   if (newPage != static_cast<int>(currentPage)) {
     currentPage = static_cast<uint32_t>(newPage);
+    beginStatisticsNavigation(false);
     return true;
   }
   return false;
