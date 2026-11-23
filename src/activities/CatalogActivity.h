@@ -38,6 +38,9 @@ class CatalogActivity : public UiListActivity {
   std::string errorMessage, statusMessage;
   size_t downloadProgress = 0, downloadTotal = 0;
   bool cancelDownload = false;
+  // Response status from a failed downloadFile() GET, if available.
+  // Read it before starting another download.
+  int lastDownloadStatus = 0;
 
   virtual void startBrowse() = 0;
   virtual void retryBrowse() { startBrowse(); }
@@ -58,13 +61,15 @@ class CatalogActivity : public UiListActivity {
            state == State::LOADING || state == State::DOWNLOADING || state == State::AUTH;
   }
   static bool wifiConnected();
-  void fail(StrId message);
+  // `detail` (e.g. "HTTP 404") follows the message when not empty.
+  void fail(StrId message, const std::string& detail = {});
   void beginLoading();
   void checkAndConnectWifi();
   void launchWifiSelection();
   void launchSearch();
   void beginDownload(const std::string& title);
-  void finishDownload(HttpDownloader::DownloadError result);
+  // `detail` (e.g. "HTTP 404") follows the failure message when not empty.
+  void finishDownload(HttpDownloader::DownloadError result, const std::string& detail = {});
   // postBody non-null turns the transfer into a POST of that body (e.g. an
   // LCP license to the fulfillment service), with postContentType as its
   // Content-Type. Same heap gating and cancel/progress pump either way.

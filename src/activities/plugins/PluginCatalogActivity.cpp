@@ -12,6 +12,7 @@
 #include <MD5Builder.h>
 #include <Memory.h>
 #include <SecureHttpClient.h>
+#include <Utf8.h>
 #include <WiFi.h>
 #include <XmlListParser.h>
 #include <strings.h>
@@ -194,6 +195,38 @@ void emitBookDownloaded(const std::string& manifestPath, const std::string& path
   const std::string plugin = pluginNameFromManifestPath(manifestPath);
   const pluginevents::Var vars[] = {{"path", path.c_str()}, {"title", title.c_str()}, {"plugin", plugin.c_str()}};
   pluginevents::emit(pluginevents::Event::BookDownloaded, vars, 3);
+}
+
+std::string httpStatusDetail(const int status) {
+  if (status <= 0 || (status >= 200 && status < 300)) return {};
+  char code[16];
+  snprintf(code, sizeof(code), "HTTP %d", status);
+  return code;
+}
+
+// "HTTP <status>", plus the reason a JSON answer gives in "error" or "message".
+std::string httpFailureDetail(const int status, const String& body) {
+  std::string detail = httpStatusDetail(status);
+  // Deserialization copies selected strings. Keep the extra work bounded
+  // after the request has already buffered the response.
+  constexpr size_t MAX_ERROR_BODY = 4096;
+  if (detail.empty() || body.length() > MAX_ERROR_BODY) return detail;
+  JsonDocument filter;
+  filter["error"] = true;
+  filter["message"] = true;
+  JsonDocument doc;
+  if (deserializeJson(doc, body, DeserializationOption::Filter(filter)) != DeserializationError::Ok) return detail;
+  const char* reason = doc["error"] | "";
+  if (*reason == '\0') reason = doc["message"] | "";
+  // Room for one short sentence on the error screen. Copy only that much (the
+  // answer may hold KBs) and never cut a UTF-8 sequence.
+  constexpr size_t MAX_REASON = 120;
+  const int len = utf8SafeTruncateBuffer(reason, strnlen(reason, MAX_REASON));
+  if (len > 0) {
+    detail += ": ";
+    detail.append(reason, len);
+  }
+  return detail;
 }
 
 // Streams the browse temp file through a catalog list parser (null on OOM).
@@ -1249,7 +1282,9 @@ void PluginCatalogActivity::downloadItem(const int itemIndex) {
     std::vector<Item>().swap(items);
   }
   requestUpdateAndWait();
-  const auto result = manifest.isBundle() && !item.files.empty() ? downloadBundle(item) : downloadBook(item);
+  std::string downloadFailure;
+  const auto result = manifest.isBundle() && !item.files.empty() ? downloadBundle(item, downloadFailure)
+                                                                 : downloadBook(item, downloadFailure);
   session.reset();
   const std::string selectedId = std::move(item.id);
   item = {};
@@ -1271,7 +1306,7 @@ void PluginCatalogActivity::downloadItem(const int itemIndex) {
   }
   session = makeUniqueNoThrow<freeink::SecureHttpClient>();
   if (!session) LOG_ERR("PCAT", "OOM: browse client; using per-request connections");
-  finishDownload(result);
+  finishDownload(result, downloadFailure);
 }
 
 void PluginCatalogActivity::downloadFinished(const bool cancelled) {
@@ -1279,7 +1314,7 @@ void PluginCatalogActivity::downloadFinished(const bool cancelled) {
   requestUpdate();
 }
 
-HttpDownloader::DownloadError PluginCatalogActivity::downloadBundle(const Item& item) {
+HttpDownloader::DownloadError PluginCatalogActivity::downloadBundle(const Item& item, std::string& downloadFailure) {
   session.reset();
   const std::string subdir = substituted(manifest.bundleSubdir, &item);
   // Reject traversal, the current-directory alias, and ambiguous backslash separators.
@@ -1340,7 +1375,10 @@ HttpDownloader::DownloadError PluginCatalogActivity::downloadBundle(const Item& 
       if (!Storage.exists(parent.c_str())) Storage.mkdir(parent.c_str());
     }
     const auto result = downloadFile(pluginhttp::escapeUrl(base + rel), dest + ".new");
-    if (result != HttpDownloader::OK) return result;
+    if (result != HttpDownloader::OK) {
+      downloadFailure = httpStatusDetail(lastDownloadStatus);
+      return result;
+    }
     staged.push_back(dest);
   }
   // ponytail: a failed swap mid-loop leaves a mixed old/new bundle; a
@@ -1361,7 +1399,7 @@ HttpDownloader::DownloadError PluginCatalogActivity::downloadBundle(const Item& 
   return HttpDownloader::OK;
 }
 
-HttpDownloader::DownloadError PluginCatalogActivity::downloadBook(const Item& item) {
+HttpDownloader::DownloadError PluginCatalogActivity::downloadBook(const Item& item, std::string& downloadFailure) {
   // Resolve the file URL: either the template itself, or one API hop away.
   std::string fileUrl;
   // The file GET carries the download headers unless url_path answered with a
@@ -1375,6 +1413,7 @@ HttpDownloader::DownloadError PluginCatalogActivity::downloadBook(const Item& it
       status = apiRequest(substitutedRequest(manifest.downloadReq, &item), response);
     }
     if (status < 200 || status >= 300) {
+      downloadFailure = httpFailureDetail(status, response);
       return HttpDownloader::HTTP_ERROR;
     }
     JsonDocument doc;
@@ -1431,7 +1470,10 @@ HttpDownloader::DownloadError PluginCatalogActivity::downloadBook(const Item& it
       refreshCredentialToken()) {
     result = fetchFile();
   }
-  if (result != HttpDownloader::OK) return result;
+  if (result != HttpDownloader::OK) {
+    downloadFailure = httpStatusDetail(lastDownloadStatus);
+    return result;
+  }
   clearBookCache(dest);
   if (library::isLibraryBookFile(dest)) library::markLibraryIndexDirty();
 

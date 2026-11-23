@@ -234,8 +234,8 @@ class PluginCatalogActivity final : public CatalogActivity {
   bool loadItemDetails(int itemIndex, ItemDetails& details);
   void showItemDetails(int itemIndex);
   void downloadItem(int itemIndex);
-  HttpDownloader::DownloadError downloadBundle(const Item& item);
-  HttpDownloader::DownloadError downloadBook(const Item& item);
+  HttpDownloader::DownloadError downloadBundle(const Item& item, std::string& downloadFailure);
+  HttpDownloader::DownloadError downloadBook(const Item& item, std::string& downloadFailure);
   void beginAuth();
   void pollAuth();
   bool refreshCredentialToken();  // password grant: mint a token from config creds
