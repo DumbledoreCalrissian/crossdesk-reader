@@ -42,6 +42,7 @@ class UITheme {
                                       EpdFontFamily::Style style = EpdFontFamily::REGULAR,
                                       TextVerticalAlignment verticalAlignment = TextVerticalAlignment::CENTER);
   static bool supportsCoverGrid();
+  static bool supportsCoverflow();
   static bool hasCoverGridHome();
   static bool hasDeskHome();
   static bool hasCoverflowHome();

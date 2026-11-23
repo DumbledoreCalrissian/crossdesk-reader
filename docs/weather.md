@@ -1,14 +1,16 @@
 # Desk weather
 
-Open **Apps → Weather** on Desk Home. Choose **Change location**, enter a city,
-connect to Wi-Fi, then select the matching city and region. Choose **Refresh** to
-fetch its forecast. No city is preselected. Tapping the Desk weather widget opens
-this screen. When no forecast is shown, the widget says whether to choose a city,
-refresh, or check the SD card; Home never fetches weather itself.
+Open **Apps → Weather** or tap the weather widget on Desk Home. In Coverflow,
+tap the **Weather** card in the apps sheet. Choose **Change location**, enter a
+city, connect to Wi-Fi, then select the matching city and region. Choose
+**Refresh** to fetch its forecast. No city is preselected. When no forecast is
+shown, the preview says whether to choose a city, refresh, or check the SD card.
 
 The Desk widget shows temperature with its unit, condition, humidity and daily
-precipitation probabilities. Precipitation amounts appear only on the Weather
-screen. The screen shows current temperature, condition and relative humidity; today's
+precipitation probabilities. The Coverflow card shows a compact saved forecast
+with temperature, condition, precipitation chance and the update time.
+Precipitation amounts appear only on the Weather screen. It shows current
+temperature, condition and relative humidity, as well as today's
 precipitation probability and total amount; and three days of high/low temperatures,
 probability and amount. Precipitation includes rain and the water equivalent of
 snow. Probability is the daily maximum probability, not a percentage of the day.

@@ -23,7 +23,7 @@ Keep the repositories side by side:
 
 ```sh
 git clone --recurse-submodules -b picco https://github.com/DumbledoreCalrissian/crossdesk-reader.git
-git clone -b fix/picco-test-link https://github.com/DumbledoreCalrissian/crosspoint-simulator.git
+git clone -b main https://github.com/DumbledoreCalrissian/crosspoint-simulator.git
 cd crossdesk-reader
 ```
 

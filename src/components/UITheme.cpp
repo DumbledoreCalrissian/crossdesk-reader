@@ -34,11 +34,13 @@ void UITheme::reload() {
 
 bool UITheme::supportsCoverGrid() { return HalMemory::getPsramHeap().totalBytes > 0; }
 
+bool UITheme::supportsCoverflow() { return BoardConfig::hasTouch() && supportsCoverGrid(); }
+
 bool UITheme::hasCoverGridHome() { return SETTINGS.uiTheme == CrossPointSettings::COVER_GRID && supportsCoverGrid(); }
 
 bool UITheme::hasDeskHome() { return SETTINGS.uiTheme == CrossPointSettings::DESK && supportsCoverGrid(); }
 
-bool UITheme::hasCoverflowHome() { return SETTINGS.uiTheme == CrossPointSettings::COVERFLOW && supportsCoverGrid(); }
+bool UITheme::hasCoverflowHome() { return SETTINGS.uiTheme == CrossPointSettings::COVERFLOW && supportsCoverflow(); }
 
 void UITheme::drawCoverGridHome(CoverGridHomeUi& home) { home.renderUi(); }
 
@@ -46,7 +48,7 @@ void UITheme::setTheme(CrossPointSettings::UI_THEME type) {
   if (type == CrossPointSettings::COVER_GRID && !supportsCoverGrid()) type = CrossPointSettings::LYRA;
   // Desk is listed only with PSRAM (see homeThemeValues); keep a stale value usable.
   if (type == CrossPointSettings::DESK && !supportsCoverGrid()) type = CrossPointSettings::LYRA_3_COVERS;
-  if (type == CrossPointSettings::COVERFLOW && !supportsCoverGrid()) type = CrossPointSettings::LYRA_3_COVERS;
+  if (type == CrossPointSettings::COVERFLOW && !supportsCoverflow()) type = CrossPointSettings::LYRA_3_COVERS;
 
   switch (type) {
     case CrossPointSettings::UI_THEME::CLASSIC:

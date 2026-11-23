@@ -280,9 +280,10 @@ inline std::vector<StrId> homeThemeValues() {
   static constexpr StrId VALUES[] = {
       StrId::STR_THEME_CLASSIC,    StrId::STR_THEME_LYRA, StrId::STR_THEME_LYRA_EXTENDED, StrId::STR_THEME_ROUNDEDRAFF,
       StrId::STR_THEME_COVER_GRID, StrId::STR_THEME_DESK, StrId::STR_THEME_COVERFLOW};
-  // Values are stored by index, so the PSRAM-only tail (Cover Grid, Desk,
-  // Coverflow) is dropped as a block; UITheme falls them back there.
-  const size_t count = UITheme::supportsCoverGrid() ? std::size(VALUES) : std::size(VALUES) - 3;
+  // Keep saved indices: the last three themes need PSRAM, and Coverflow also needs touch.
+  const size_t count = UITheme::supportsCoverflow()   ? std::size(VALUES)
+                       : UITheme::supportsCoverGrid() ? std::size(VALUES) - 1
+                                                      : std::size(VALUES) - 3;
   return {VALUES, VALUES + count};
 }
 

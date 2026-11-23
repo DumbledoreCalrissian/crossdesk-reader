@@ -9,6 +9,12 @@ It is an unofficial fork, not supported by the CrossPoint project or BOOX.
 The fork follows upstream CrossPoint closely, so treat it like a development
 branch: new upstream changes arrive often, and bugs can still appear.
 
+## What's new in 0.3.0
+
+Coverflow adds a cover-first Home screen and an apps sheet with Reading, Todo
+and Weather cards. Todo adds a task editor, priorities, due dates and four ways
+to sort open tasks. [0.3.0 release notes](docs/releases/0.3.0.md)
+
 ## Desk
 
 Desk is the Home screen theme that gives CrossDesk Reader its name.
@@ -47,7 +53,8 @@ The calendar opens monthly Statistics, and the weather widget opens Weather:
 
 ## Coverflow
 
-To use Coverflow, choose **Settings > Display > UI Theme > Coverflow**. Swipe
+Coverflow needs touch and PSRAM, both available on the Picco.
+Choose **Settings > Display > UI Theme > Coverflow**. Swipe
 left or right, press Up or Down, or tap a side cover to move between recent
 books. Tap the centre cover to open the book.
 
@@ -60,10 +67,24 @@ closed.
 show the title, saved progress, and recorded EPUB reading time.
 You can turn it off in **Settings > Display** while using Coverflow.
 
+<p align="center">
+  <img src="docs/images/screenshots/coverflow-home.png" alt="Coverflow Home with neighbouring covers and a reading progress bar" width="240">
+  <img src="docs/images/screenshots/coverflow-apps.png" alt="Coverflow apps sheet with Reading, Todo and Weather cards" width="240">
+</p>
+
+## Todo
+
+Todo keeps up to 32 tasks offline. Tap a task to edit its text and due date.
+Cycle its priority from the list, or sort open tasks by priority, due date,
+creation date or added order. Desk and Coverflow preview the open tasks in the
+same order. [Todo guide](docs/picco-todo.md)
+
+<p align="center">
+  <img src="docs/images/screenshots/todo.png" alt="Todo list showing priorities, due dates and an overdue task" width="240">
+</p>
+
 ## Other features added by this fork
 
-- [Todo](docs/picco-todo.md): an offline list of up to 32 tasks, with priorities,
-  creation/due dates and sorting. Text and due dates save from its edit screen.
 - [Pomodoro](docs/picco-pomodoro.md): a foreground focus/break timer.
 - [Sudoku](docs/picco-sudoku.md): notes, undo, hints, saved games and puzzle-pack downloads.
 - [T9 keypad](USER_GUIDE.md#36-settings): a phone-style keypad for every text field, as an option to the
@@ -74,13 +95,12 @@ You can turn it off in **Settings > Display** while using Coverflow.
   that keeps position and bookmarks). Library shows each opened EPUB's saved
   percentage. Home can show the current EPUB's progress and reading time.
 - Monthly **Statistics**: a read-only page with one month of the reading
-  calendar. It opens from Desk and from the other themes' Home menus (the chart
-  icon in Cover Grid).
+  calendar. Open it from Desk, the Coverflow Reading card or the other themes'
+  Home menus. In Cover Grid, use the chart icon.
 - File Transfer from the Browse Files root header.
 - `My Clippings.txt` is hidden from Library and Home, but stays in Browse Files.
 
 <p align="center">
-  <img src="docs/images/screenshots/todo.png" alt="Todo list with priority and date marks" width="200">
   <img src="docs/images/screenshots/pomodoro.png" alt="Pomodoro timer" width="200">
   <img src="docs/images/screenshots/sudoku-game.png" alt="Sudoku game with notes, undo, check and reveal" width="200">
   <img src="docs/images/screenshots/t9-keypad.png" alt="T9 keypad while typing a new Todo task" width="200">
@@ -114,12 +134,12 @@ upload; recovery has not been tested.
 
 ## Releases
 
-Releases are tagged `crossdesk-v<version>`, for example `crossdesk-v0.1.0`,
+Releases are tagged `crossdesk-v<version>`, for example `crossdesk-v0.3.0`,
 so they never clash with upstream CrossPoint's version tags. Each release has
 one file per board, named `crossdesk-<version>-<board>.bin` (for the Picco,
-`crossdesk-<version>-picco.bin`). Keep this naming: the firmware's update check
-only finds files with these names. The Picco cannot update itself, so install
-its file with a USB upload as described above.
+`crossdesk-<version>-picco.bin`). The firmware's update check uses these names.
+Install the downloaded Picco file over USB.
+[Picco installation instructions](docs/releases/0.3.0.md#installing-on-the-picco)
 
 ## Help
 

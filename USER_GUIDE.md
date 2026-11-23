@@ -284,7 +284,7 @@ Settings are grouped into **System**, **Display**, **Reader**, **Controls**, **L
   - "RoundedRaff" - A rounded theme with additional visual styling
   - "Cover Grid" - Recent books as a grid of covers (devices with PSRAM only)
   - "Desk" (default on devices with PSRAM) - The current book, recent books, Todo, reading calendar and weather on one screen (devices with PSRAM only)
-  - "Coverflow" (devices with PSRAM only) - Recent books in a row of covers. Swipe left or right, press Up or Down, or tap a side cover to move between books. Tap the centre cover to open the book.
+  - "Coverflow" (devices with touch and PSRAM) - Recent books in a row of covers. Swipe left or right, press Up or Down, or tap a side cover to move between books. Tap the centre cover to open the book.
 
     Swipe up or tap the bottom arrow to open the apps sheet. Tap the Reading,
     Todo or Weather card to open Statistics, Todo or Weather. Swipe down, tap

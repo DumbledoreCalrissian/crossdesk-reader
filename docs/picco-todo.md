@@ -1,17 +1,17 @@
 # Todo
 
-Open **Todo** from Desk's widget or **Apps**, then **New task**. The selected
-full keyboard or T9 keypad opens first. Type a description and tap **OK** to
-return to **Edit task**. Set a due date if needed, then tap **Save**. Cancelling
-the keyboard for a new task returns to the list without creating a task.
+Open **Todo** from Desk's widget or **Apps**, or from the **Todo** card in the
+Coverflow apps sheet. Tap **New task** to open the selected full keyboard or
+T9 keypad. Type a description and tap **OK** to return to **Edit task**. Set a
+due date if needed, then tap **Save**. Cancelling the keyboard for a new task
+returns to the list without creating a task.
 
-Desk Home also shows the first three unfinished tasks in the selected sort order
-beside the current book. Each row starts with its priority mark, or a bullet
-when no priority is set. Due dates are right aligned; task text is shortened
-to leave room. `*` marks an overdue task when the clock is trusted and there is room.
-Tap anywhere in that widget to open Todo. It shows "No open tasks" when every
-task is done, and "Tasks unavailable" when the saved tasks cannot be read. On Picco, Up/Down page the recent-book
-strip; with a Confirm key they select books and the menu button.
+Desk Home and the Coverflow apps sheet show the first three unfinished tasks in
+the selected sort order. Each row starts with its priority mark, or a bullet
+when no priority is set. Due dates align right, and task text is shortened to
+leave room. `*` marks an overdue task when the clock is trusted and there is
+room. Tap the preview to open Todo. It shows "No open tasks" when every task is
+done, and "Tasks unavailable" when the saved tasks cannot be read.
 
 - The header shows how many tasks you have, for example "Todo (12/32)".
 - Open tasks are listed first, then completed ones. Tap the header arrows to
