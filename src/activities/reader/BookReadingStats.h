@@ -7,13 +7,13 @@
 #include "util/ReadingStats.h"
 #include "util/ReadingStatsStore.h"
 
-// EPUB activity-owned policy. All access is serialized by RenderLock.
-class EpubReadingStats {
+// Reader-owned policy. All access is serialized by RenderLock.
+class BookReadingStats {
  public:
   using Departure = readingstats::Collector::Departure;
   using Status = readingstats::Store::Status;
 
-  EpubReadingStats(std::string_view path, uint32_t now);
+  BookReadingStats(std::string_view path, uint32_t now);
   void pageShown(uint32_t now, bool samePage = false);
   void beginNavigation(uint32_t now, Departure reason);
   void completeNavigation(uint32_t now);

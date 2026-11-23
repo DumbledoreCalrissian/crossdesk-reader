@@ -258,7 +258,7 @@ void EpubReaderActivity::onExit() {
 
 void EpubReaderActivity::queueReadingSession() {
   if (!readingStatistics) return;
-  const EpubReadingStats::Session session = readingStatistics->takeSession();
+  const BookReadingStats::Session session = readingStatistics->takeSession();
   if (session.seconds < readingSessionLog::MIN_SECONDS || !epub || !readingSessionLog::enabled()) return;
   const int64_t now = trustedtime::trustedNow();
   if (now <= 0) return;  // no trusted clock: the server could not place the session
@@ -340,8 +340,8 @@ bool EpubReaderActivity::loadBook() {
   epub = std::move(loadedEpub);
   if (isEpubBook() && !statisticsLoadAttempted) {
     statisticsLoadAttempted = true;
-    readingStatistics = makeUniqueNoThrow<EpubReadingStats>(bookPath, millis());
-    if (!readingStatistics) LOG_ERR("STATS", "Allocation failed: %u bytes", unsigned(sizeof(EpubReadingStats)));
+    readingStatistics = makeUniqueNoThrow<BookReadingStats>(bookPath, millis());
+    if (!readingStatistics) LOG_ERR("STATS", "Allocation failed: %u bytes", unsigned(sizeof(BookReadingStats)));
   }
   vocabularyMetadata.reset();
 
@@ -1628,8 +1628,8 @@ bool EpubReaderActivity::pageTurn(bool isForwardTurn) {
   }
   lastPageTurnTime = millis();
   if (readingStatistics)
-    readingStatistics->beginNavigation(lastPageTurnTime, isForwardTurn ? EpubReadingStats::Departure::ForwardTurn
-                                                                       : EpubReadingStats::Departure::Navigation);
+    readingStatistics->beginNavigation(lastPageTurnTime, isForwardTurn ? BookReadingStats::Departure::ForwardTurn
+                                                                       : BookReadingStats::Departure::Navigation);
   return true;
 }
 
@@ -1650,7 +1650,7 @@ bool EpubReaderActivity::skipPages(int amount) {
   } else {
     return false;
   }
-  if (readingStatistics) readingStatistics->beginNavigation(millis(), EpubReadingStats::Departure::Navigation);
+  if (readingStatistics) readingStatistics->beginNavigation(millis(), BookReadingStats::Departure::Navigation);
   return true;
 }
 

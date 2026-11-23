@@ -483,9 +483,9 @@ TEST_F(ReadingStore, CollectorCanRetryPendingTotalsWithoutDoubleCounting) {
   EXPECT_EQ(reopened.totals(), (Totals{10000, 1}));
 }
 
-#include "EpubReadingStats.h"
+#include "BookReadingStats.h"
 
-static void successfulDeparture(EpubReadingStats& stats, uint32_t now, Departure reason) {
+static void successfulDeparture(BookReadingStats& stats, uint32_t now, Departure reason) {
   stats.beginNavigation(now, reason);
   stats.completeNavigation(now);
 }
@@ -500,7 +500,7 @@ class EpubStatistics : public testing::Test {
 };
 
 TEST_F(EpubStatistics, DeterministicSequencePersistsAfterRestart) {
-  EpubReadingStats stats(BOOK, 0);
+  BookReadingStats stats(BOOK, 0);
   stats.pageShown(1000);
   stats.pageShown(2000);  // repaint / rejected navigation keeps dwell
   successfulDeparture(stats, 4000, Departure::ForwardTurn);
@@ -520,18 +520,18 @@ TEST_F(EpubStatistics, DeterministicSequencePersistsAfterRestart) {
   stats.stop(439000);       // onExit after prepareForSleep
   EXPECT_EQ(stats.totals(), (Totals{25000, 2}));
   EXPECT_FALSE(stats.unsaved());
-  EpubReadingStats restarted(BOOK, 0);
+  BookReadingStats restarted(BOOK, 0);
   EXPECT_EQ(restarted.totals(), stats.totals());
 }
 
 TEST_F(EpubStatistics, SessionMatchesCountedTimeAndIsTakenOnce) {
   {
-    EpubReadingStats earlier(BOOK, 0);
+    BookReadingStats earlier(BOOK, 0);
     earlier.pageShown(0);
     successfulDeparture(earlier, 5000, Departure::ForwardTurn);
     earlier.stop(5000);
   }
-  EpubReadingStats stats(BOOK, 0);
+  BookReadingStats stats(BOOK, 0);
   EXPECT_EQ(stats.takeSession().seconds, 0u);  // nothing counted, not stopped
   stats.pageShown(10000);
   successfulDeparture(stats, 14000, Departure::ForwardTurn);
@@ -548,7 +548,7 @@ TEST_F(EpubStatistics, SessionMatchesCountedTimeAndIsTakenOnce) {
 }
 
 TEST_F(EpubStatistics, CheckpointSettledTotalsOnlyAndThrottleAttempts) {
-  EpubReadingStats stats(BOOK, 0);
+  BookReadingStats stats(BOOK, 0);
   stats.pageShown(0);
   successfulDeparture(stats, 3000, Departure::ForwardTurn);
   EXPECT_EQ(Storage.writes, 0u);
@@ -568,7 +568,7 @@ TEST_F(EpubStatistics, CheckpointSettledTotalsOnlyAndThrottleAttempts) {
 }
 
 TEST_F(EpubStatistics, FailedCheckpointThrottlesAndForceRetryRetainsPending) {
-  EpubReadingStats stats(BOOK, 0);
+  BookReadingStats stats(BOOK, 0);
   stats.pageShown(60000);
   Storage.failRename = true;
   successfulDeparture(stats, 65000, Departure::ForwardTurn);
@@ -584,14 +584,14 @@ TEST_F(EpubStatistics, FailedCheckpointThrottlesAndForceRetryRetainsPending) {
   stats.pause(71000);
   EXPECT_FALSE(stats.unsaved());
   EXPECT_FALSE(stats.writeFailed());
-  EpubReadingStats restarted(BOOK, 0);
+  BookReadingStats restarted(BOOK, 0);
   EXPECT_EQ(restarted.totals(), (Totals{8000, 2}));
 }
 
 TEST_F(EpubStatistics, ResetDiscardsPendingAndActiveDwellWithoutChangingOtherFiles) {
   Storage.files["/progress.bin"] = "position";
   Storage.files["/bookmarks.bin"] = "bookmarks";
-  EpubReadingStats stats(BOOK, 0);
+  BookReadingStats stats(BOOK, 0);
   stats.pageShown(0);
   successfulDeparture(stats, 5000, Departure::ForwardTurn);
   stats.pageShown(6000);
@@ -600,26 +600,26 @@ TEST_F(EpubStatistics, ResetDiscardsPendingAndActiveDwellWithoutChangingOtherFil
   EXPECT_EQ(stats.totals(), Totals{});
   stats.pageShown(20000);
   stats.stop(23000);
-  EpubReadingStats restarted(BOOK, 0);
+  BookReadingStats restarted(BOOK, 0);
   EXPECT_EQ(restarted.totals(), (Totals{3000, 0}));
   EXPECT_EQ(Storage.files["/progress.bin"], "position");
   EXPECT_EQ(Storage.files["/bookmarks.bin"], "bookmarks");
 }
 
 TEST_F(EpubStatistics, FailedResetKeepsTotalsAndCanRetry) {
-  EpubReadingStats stats(BOOK, 0);
+  BookReadingStats stats(BOOK, 0);
   stats.pageShown(0);
   stats.pause(5000);
   Storage.failRename = true;
   EXPECT_FALSE(stats.reset());
   EXPECT_TRUE(stats.writeFailed());
   EXPECT_EQ(stats.totals(), (Totals{5000, 0}));
-  EpubReadingStats restarted(BOOK, 0);
+  BookReadingStats restarted(BOOK, 0);
   EXPECT_EQ(restarted.totals(), stats.totals());
   Storage.failRename = false;
   EXPECT_TRUE(stats.reset());
   EXPECT_FALSE(stats.writeFailed());
-  EpubReadingStats resetRestart(BOOK, 0);
+  BookReadingStats resetRestart(BOOK, 0);
   EXPECT_EQ(resetRestart.totals(), Totals{});
 }
 
@@ -630,7 +630,7 @@ TEST_F(EpubStatistics, CorruptHistoryUnavailableUntilExplicitReset) {
     ASSERT_EQ(store.save({10000, 2}), Status::Ok);
   }
   for (auto& [path, bytes] : Storage.files) bytes = "damaged";
-  EpubReadingStats stats(BOOK, 0);
+  BookReadingStats stats(BOOK, 0);
   EXPECT_FALSE(stats.available());
   EXPECT_TRUE(stats.canReset());
   stats.pageShown(0);
@@ -645,7 +645,7 @@ TEST_F(EpubStatistics, CorruptHistoryUnavailableUntilExplicitReset) {
 
 TEST_F(EpubStatistics, UnreadableHistoryDisablesCollectionAndResetForThisOpen) {
   Storage.mounted = false;
-  EpubReadingStats stats(BOOK, 0);
+  BookReadingStats stats(BOOK, 0);
   EXPECT_FALSE(stats.available());
   EXPECT_FALSE(stats.canReset());
   Storage.mounted = true;
@@ -656,7 +656,7 @@ TEST_F(EpubStatistics, UnreadableHistoryDisablesCollectionAndResetForThisOpen) {
 }
 
 TEST_F(EpubStatistics, CheckpointClockWrap) {
-  EpubReadingStats stats(BOOK, UINT32_MAX - 30000);
+  BookReadingStats stats(BOOK, UINT32_MAX - 30000);
   stats.pageShown(UINT32_MAX - 2000);
   successfulDeparture(stats, 31000, Departure::ForwardTurn);
   EXPECT_EQ(Storage.writes, 1u);
@@ -664,7 +664,7 @@ TEST_F(EpubStatistics, CheckpointClockWrap) {
 }
 
 TEST_F(EpubStatistics, ClampedForwardRequestPreservesOriginalDwellAndDoesNotWrite) {
-  EpubReadingStats stats(BOOK, 0);
+  BookReadingStats stats(BOOK, 0);
   stats.pageShown(0);
   stats.beginNavigation(65000, Departure::ForwardTurn);
   EXPECT_EQ(Storage.writes, 0u);
@@ -681,7 +681,7 @@ TEST_F(EpubStatistics, ClampedForwardRequestPreservesOriginalDwellAndDoesNotWrit
 TEST_F(EpubStatistics, FailedTargetLoadAndSleepBeforePaintDoNotAddForwardTurns) {
   for (const bool sleeping : {false, true}) {
     Storage = FakeStorage{};
-    EpubReadingStats stats(BOOK, 0);
+    BookReadingStats stats(BOOK, 0);
     stats.pageShown(0);
     stats.beginNavigation(5000, Departure::ForwardTurn);
     if (sleeping)
@@ -694,7 +694,7 @@ TEST_F(EpubStatistics, FailedTargetLoadAndSleepBeforePaintDoNotAddForwardTurns) 
 }
 
 TEST_F(EpubStatistics, SlowLoadingPopupPreservesSuccessfulForwardDeparture) {
-  EpubReadingStats stats(BOOK, 0);
+  BookReadingStats stats(BOOK, 0);
   stats.pageShown(0);
   stats.beginNavigation(5000, Departure::ForwardTurn);
   stats.loading(6000);  // initial uncached chapter loading
@@ -706,7 +706,7 @@ TEST_F(EpubStatistics, SlowLoadingPopupPreservesSuccessfulForwardDeparture) {
 }
 
 TEST_F(EpubStatistics, LoadingRepaintPausesVisiblePageAndFailedTargetStillHasNoTurn) {
-  EpubReadingStats stats(BOOK, 0);
+  BookReadingStats stats(BOOK, 0);
   stats.pageShown(0);
   stats.loading(5000);  // same-page reflow, with no pending departure
   stats.pageShown(10000);
@@ -722,7 +722,7 @@ extern uint16_t calendarTestGoal;
 TEST_F(EpubStatistics, CalendarRecordsConfirmedBurstsAndSkipsFailedTurns) {
   calendarTestLocal = uint64_t(20000) * 86400000 + 100000;
   calendarTestGoal = 30;
-  EpubReadingStats stats(BOOK, 0);
+  BookReadingStats stats(BOOK, 0);
   stats.pageShown(0);
   calendarTestLocal += 3000;
   stats.beginNavigation(3000, Departure::ForwardTurn);
@@ -738,7 +738,7 @@ TEST_F(EpubStatistics, CalendarRecordsConfirmedBurstsAndSkipsFailedTurns) {
 }
 TEST_F(EpubStatistics, CalendarSplitsMidnightAndIgnoresClockJumps) {
   calendarTestLocal = uint64_t(20001) * 86400000 - 2000;
-  EpubReadingStats stats(BOOK, 0);
+  BookReadingStats stats(BOOK, 0);
   stats.pageShown(0);
   calendarTestLocal += 4000;
   stats.pause(4000);

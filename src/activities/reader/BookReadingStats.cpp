@@ -1,11 +1,11 @@
-#include "EpubReadingStats.h"
+#include "BookReadingStats.h"
 
 #include <Logging.h>
 #include <Memory.h>
 
 #include "util/ReadingCalendarClock.h"
 
-EpubReadingStats::EpubReadingStats(const std::string_view path, const uint32_t now)
+BookReadingStats::BookReadingStats(const std::string_view path, const uint32_t now)
     : loadStatus(store.load(path)), lastCheckpoint(now) {
   if (available()) collector = readingstats::Collector(store.totals());
   calendarAccounted = collector.totals().readingMilliseconds;
@@ -15,11 +15,11 @@ EpubReadingStats::EpubReadingStats(const std::string_view path, const uint32_t n
   }
 }
 
-bool EpubReadingStats::available() const {
+bool BookReadingStats::available() const {
   return loadStatus == Status::Ok || loadStatus == Status::Missing || loadStatus == Status::Recovered;
 }
 
-void EpubReadingStats::pageShown(const uint32_t now, const bool samePage) {
+void BookReadingStats::pageShown(const uint32_t now, const bool samePage) {
   if (stopped || !available()) return;
   if (pendingNavigation && samePage) {
     collector = beforeNavigation;
@@ -36,7 +36,7 @@ void EpubReadingStats::pageShown(const uint32_t now, const bool samePage) {
   collector.pageShown(now);
 }
 
-void EpubReadingStats::beginNavigation(const uint32_t now, const Departure reason) {
+void BookReadingStats::beginNavigation(const uint32_t now, const Departure reason) {
   if (stopped || !available() || pendingNavigation) return;
   beforeNavigation = collector;
   navigationAt = now;
@@ -44,19 +44,19 @@ void EpubReadingStats::beginNavigation(const uint32_t now, const Departure reaso
   collector.depart(now, reason);
 }
 
-void EpubReadingStats::completeNavigation(const uint32_t now) {
+void BookReadingStats::completeNavigation(const uint32_t now) {
   if (!pendingNavigation) return;
   pendingNavigation = false;
   recordCalendar(navigationAt, now, false);
   save(now, false);
 }
 
-void EpubReadingStats::loading(const uint32_t now) {
+void BookReadingStats::loading(const uint32_t now) {
   // A pending navigation already stopped timing; its target render still owns confirmation.
   if (!pendingNavigation) pause(now);
 }
 
-void EpubReadingStats::pause(const uint32_t now) {
+void BookReadingStats::pause(const uint32_t now) {
   const uint32_t end = pendingNavigation ? navigationAt : now;
   if (pendingNavigation) {
     // The target never became readable; keep departure time without a turn.
@@ -69,19 +69,19 @@ void EpubReadingStats::pause(const uint32_t now) {
   save(now, true);
 }
 
-void EpubReadingStats::stop(const uint32_t now) {
+void BookReadingStats::stop(const uint32_t now) {
   stopped = true;
   pause(now);
 }
 
-void EpubReadingStats::save(const uint32_t now, const bool force) {
+void BookReadingStats::save(const uint32_t now, const bool force) {
   if (!unsaved() || !store.canSave() || (!force && now - lastCheckpoint < 60000)) return;
   lastCheckpoint = now;
   failedWrite = store.save(collector.totals()) != Status::Ok;
   if (failedWrite) LOG_ERR("STATS", "EPUB statistics save failed; retaining pending totals");
 }
 
-bool EpubReadingStats::reset() {
+bool BookReadingStats::reset() {
   if (!store.canReset()) return false;
   if (store.reset() != Status::Ok) {
     failedWrite = true;
@@ -98,13 +98,13 @@ bool EpubReadingStats::reset() {
   return true;
 }
 
-void EpubReadingStats::recordCalendar(uint32_t end, uint32_t now, bool force) {
+void BookReadingStats::recordCalendar(uint32_t end, uint32_t now, bool force) {
   const auto total = collector.totals().readingMilliseconds;
   if (calendar) calendar->record(total >= calendarAccounted ? total - calendarAccounted : 0, end, now, force);
   calendarAccounted = total;
 }
 
-EpubReadingStats::Session EpubReadingStats::takeSession() {
+BookReadingStats::Session BookReadingStats::takeSession() {
   if (!stopped || !sessionStarted) return {};
   sessionStarted = false;
   const uint64_t total = collector.totals().readingMilliseconds;

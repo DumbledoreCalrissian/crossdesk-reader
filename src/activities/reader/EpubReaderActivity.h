@@ -10,11 +10,11 @@
 #include <optional>
 #include <vector>
 
+#include "BookReadingStats.h"
 #include "BookmarkEntry.h"
 #include "ChapterPosition.h"
 #include "ClipSelectionActivity.h"
 #include "EpubReaderMenuActivity.h"
-#include "EpubReadingStats.h"
 #include "LinkNoteTitle.h"
 #include "ProgressMapper.h"
 #include "ReaderActivity.h"
@@ -23,7 +23,7 @@
 
 class EpubReaderActivity final : public ReaderActivity {
   std::shared_ptr<Epub> epub;
-  std::unique_ptr<EpubReadingStats> readingStatistics;
+  std::unique_ptr<BookReadingStats> readingStatistics;
   bool statisticsLoadAttempted = false;
   int statisticsSpine = -1;
   int statisticsPage = -1;

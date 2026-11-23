@@ -32,7 +32,7 @@ void EpubBookStatisticsActivity::showSummary() {
     } else if (statistics->writeFailed()) {
       message += ' ';
       message += tr(STR_STATS_RESET_FAILED);
-    } else if (statistics->status() == EpubReadingStats::Status::Recovered) {
+    } else if (statistics->status() == BookReadingStats::Status::Recovered) {
       message += ' ';
       message += tr(STR_STATS_RECOVERED);
     }
@@ -51,7 +51,7 @@ void EpubBookStatisticsActivity::showSummary() {
     if (!statistics) {
       message += tr(STR_STATS_UNAVAILABLE);
     } else {
-      using Status = EpubReadingStats::Status;
+      using Status = BookReadingStats::Status;
       switch (statistics->status()) {
         case Status::Corrupt:
           message += tr(STR_STATS_CORRUPT);

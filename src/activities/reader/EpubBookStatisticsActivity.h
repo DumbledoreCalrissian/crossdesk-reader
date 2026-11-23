@@ -1,12 +1,12 @@
 #pragma once
 
-#include "EpubReadingStats.h"
+#include "BookReadingStats.h"
 #include "activities/Activity.h"
 #include "components/OptionPopup.h"
 
 class EpubBookStatisticsActivity final : public Activity {
  public:
-  EpubBookStatisticsActivity(GfxRenderer& renderer, MappedInputManager& input, EpubReadingStats* statistics,
+  EpubBookStatisticsActivity(GfxRenderer& renderer, MappedInputManager& input, BookReadingStats* statistics,
                              int percent)
       : Activity("BookStatistics", renderer, input), statistics(statistics), percent(percent) {}
   void onEnter() override;
@@ -17,7 +17,7 @@ class EpubBookStatisticsActivity final : public Activity {
  private:
   enum class Action { None, Close, ConfirmReset, Reset, Summary, Retry };
   void showSummary();
-  EpubReadingStats* statistics;  // Retained parent owns the sole collector/store.
+  BookReadingStats* statistics;  // Retained parent owns the sole collector/store.
   int percent;
   OptionPopup popup;
   Action pending = Action::None;
