@@ -99,8 +99,8 @@ same order. [Todo guide](docs/picco-todo.md)
 - Monthly **Statistics**: a read-only page with one month of the reading
   calendar. Open it from Desk, the Coverflow Reading card or the other themes'
   Home menus. In Cover Grid, use the chart icon.
-- File Transfer from the Browse Files root header.
-- `My Clippings.txt` is hidden from Library and Home, but stays in Browse Files.
+- File Transfer from the Files root header.
+- `My Clippings.txt` is hidden from Library and Home, but stays in Files.
 
 <p align="center">
   <img src="docs/images/screenshots/pomodoro.png" alt="Pomodoro timer" width="200">

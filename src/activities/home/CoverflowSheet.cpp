@@ -169,7 +169,7 @@ void CoverflowSheet::drawTile(const int index) const {
   if (const uint8_t* bitmap = LyraTheme::menuIcon(appMenuIcon(item))) {
     renderer.drawIcon(bitmap, x + (TILE - ICON) / 2, y + (TILE - ICON) / 2, ICON);
   }
-  // Two lines, so "Browse Files" and longer translations fit a narrow cell.
+  // Two lines, so "Files" and longer translations fit a narrow cell.
   const int lineH = renderer.getLineHeight(SMALL_FONT_ID);
   UITheme::drawCenteredWrappedText(renderer, Rect{cell.x + 2, y + TILE + 6, cell.width - 4, 2 * lineH}, SMALL_FONT_ID,
                                    appMenuLabel(item), 2, true, EpdFontFamily::REGULAR,

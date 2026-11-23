@@ -132,7 +132,7 @@ def read_save(sd):
 
 
 def enter_sudoku(theme):
-    # Home rows: Browse Files, Library, Settings, Todo, Pomodoro, Sudoku.
+    # Home rows: Files, Library, Settings, Todo, Pomodoro, Sudoku.
     if theme == 4:
         return Steps().add('TAP:428,755')
     steps = Steps(300)

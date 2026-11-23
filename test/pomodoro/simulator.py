@@ -24,7 +24,7 @@ ART.mkdir(exist_ok=True, parents=True)
 
 
 def enter(theme, extra=False, restored=False):
-    # Home rows: Browse Files, Library, [Plugins], Settings, Todo, Pomodoro, Sudoku.
+    # Home rows: Files, Library, [Plugins], Settings, Todo, Pomodoro, Sudoku.
     if theme == 4:
         return '400:TAP:352,760;'
     if not extra:
@@ -245,7 +245,7 @@ def file_transfer_entry():
     # File Transfer moved from Home to the file browser's root header.
     home = '0:WAIT:Entering activity: Home;'
     output = launch(1, 'transfer-home', home + '300:QUIT')
-    screens = [line for line in output.splitlines() if line.startswith('[SIM] SCREEN:') and 'Browse Files' in line]
+    screens = [line for line in output.splitlines() if line.startswith('[SIM] SCREEN:') and 'Files' in line]
     assert screens and 'File Transfer' not in screens[-1], 'Home still lists File Transfer'
     launch(1, 'transfer-touch', home + '400:TAP:240,346;0:WAIT:Entering activity: FileBrowser;'
            f'800:SHOT:{ART}/file-browser-root.bmp;1500:TAP:440,55;0:WAIT:Entering activity: CrossPointWebServer;300:QUIT')

@@ -13,7 +13,7 @@ Welcome to **CrossDesk Reader**, a BOOX Picco fork of the CrossPoint firmware. T
   - [3. Screens](#3-screens)
     - [3.1 Home Screen](#31-home-screen)
     - [3.2 Reading Mode](#32-reading-mode)
-    - [3.3 Browse Files Screen](#33-browse-files-screen)
+    - [3.3 Files Screen](#33-files-screen)
     - [3.4 Library Screen](#34-library-screen)
     - [3.5 File Transfer Screen](#35-file-transfer-screen)
     - [3.5.1 Calibre Wireless Transfers](#351-calibre-wireless-transfers)
@@ -76,7 +76,7 @@ Alternatively, while reading a book, press the **Confirm** button to open the re
 
 The Control Center is available on all touch devices. Devices with a frontlight also show light controls. The X4 Pro has adjustable brightness and warmth; the Paper Mono has adjustable brightness only.
 
-* **Open the panel:** Swipe down from the top edge of the screen, from almost any screen (Home, Browse Files, Reading Mode, etc.). You can also tap the status bar on Home or Settings. On devices with a frontlight, drag the brightness slider (and the warmth slider, where available) to adjust the light live, or tap the sun icon to turn it on or off. The side Up and Down keys also raise and lower the brightness.
+* **Open the panel:** Swipe down from the top edge of the screen, from almost any screen (Home, Files, Reading Mode, etc.). You can also tap the status bar on Home or Settings. On devices with a frontlight, drag the brightness slider (and the warmth slider, where available) to adjust the light live, or tap the sun icon to turn it on or off. The side Up and Down keys also raise and lower the brightness.
 * **Quick controls:** The panel has one row of icons: moon for night mode, circular arrows to refresh the screen, an underlined **T** to cycle reading direction, and the Settings Controls pointer to toggle reader touch controls. On builds with Bluetooth support, a fifth button enables or disables the Bluetooth page turner. Its crossed-out icon means disabled. The **T** rotates with the selected direction. A filled toggle means enabled; an outlined toggle means disabled. Refresh and direction always have outlines. Turning reader touch controls off leaves the panel usable. Bluetooth reconnection follows the normal rules after you close the panel; enabling it does not pair a new remote.
 * **Quick toggle:** On devices with a frontlight, set **Settings → Controls → Power button → Double click** to **Frontlight** (the default on X4 Pro and EEGO A4), then double-click the **Power** button to turn the frontlight on or off instantly, without opening the panel.
 
@@ -109,7 +109,7 @@ Upon turning the device on for the first time, you will be placed on the **[Home
 
 ### 3.1 Home Screen
 
-The Home screen is the main entry point to the firmware. From here you can navigate to **[Reading Mode](#4-reading-mode)** with the most recently read book, **[Browse Files](#33-browse-files-screen)**, the **[Library](#34-library-screen)**, or **[Settings](#36-settings)**. **[File Transfer](#35-file-transfer-screen)** opens from the top-right icon in Browse Files.
+The Home screen is the main entry point to the firmware. From here you can navigate to **[Reading Mode](#4-reading-mode)** with the most recently read book, **[Files](#33-files-screen)**, the **[Library](#34-library-screen)**, or **[Settings](#36-settings)**. **[File Transfer](#35-file-transfer-screen)** opens from the top-right icon in Files.
 
 In the **Desk** theme, tap the reading-calendar day grid to open **Statistics**
 for the current month. Month arrows and page buttons browse retained history;
@@ -135,9 +135,9 @@ for the shade legend, empty states and history limits.
 
 See [Reading Mode](#4-reading-mode) below for more information.
 
-### 3.3 Browse Files Screen
+### 3.3 Files Screen
 
-The Browse Files screen acts as a file and folder browser. The full path to the current directory is shown at the top of the screen. File extensions are displayed alongside each filename (turn off **Show File Extensions** in **Settings → System** to give names the full row; files that differ only by extension, such as `book.epub` and `book.xtc`, then look alike), and directories are shown with brackets (e.g. `[folder-name]`). Hidden directories (those beginning with `.`) are also visible.
+The Files screen acts as a file and folder browser. The full path to the current directory is shown at the top of the screen. File extensions are displayed alongside each filename (turn off **Show File Extensions** in **Settings → System** to give names the full row; files that differ only by extension, such as `book.epub` and `book.xtc`, then look alike), and directories are shown with brackets (e.g. `[folder-name]`). Hidden directories (those beginning with `.`) are also visible.
 
 * **Navigate List:** Use **Left** (or **Side Up**), or **Right** (or **Side Down**) to move the selection cursor up and down through folders and books. You can also long-press these buttons to scroll a full page up or down.
 * **Open Selection:** Press **Confirm** to open a folder or start reading a selected book. Selecting a `.bmp` file will open the image viewer.
@@ -170,7 +170,7 @@ The index is created automatically the first time the Library is opened, and it 
 
 ### 3.5 File Transfer Screen
 
-The File Transfer screen allows you to upload and manage files on the device. Open **Browse Files**; at the SD card's root folder, tap the File Transfer icon at the top right of the header, or move the selection up past the first entry to focus it and press Confirm. **Back** goes up one level: from a running server, Calibre Wireless, the OPDS Browser (when opened here) or USB Drive back to this screen, and from this screen back to Browse Files. USB Drive returns here when you eject it on the computer, or when you press Back before connecting. After Wi-Fi or USB storage was used, the device restarts briefly (a Loading message) to free memory and then opens that screen. The Home gesture still goes to Home. When you enter the screen, choose **Join a Network**, **Calibre Wireless**, **Create Hotspot**, or, on devices that support it, **USB Drive**. The reader then starts the web server for the selected mode. The screen also lists **OPDS Browser**, which opens your OPDS catalogs; with no server configured it opens the server list so you can add one (see [OPDS Servers](#365-opds-servers-multiple-libraries)). When the plugin system is off and a server is configured, OPDS Browser is on the Home screen instead.
+The File Transfer screen allows you to upload and manage files on the device. Open **Files**; at the SD card's root folder, tap the File Transfer icon at the top right of the header, or move the selection up past the first entry to focus it and press Confirm. **Back** goes up one level: from a running server, Calibre Wireless, the OPDS Browser (when opened here) or USB Drive back to this screen, and from this screen back to Files. USB Drive returns here when you eject it on the computer, or when you press Back before connecting. After Wi-Fi or USB storage was used, the device restarts briefly (a Loading message) to free memory and then opens that screen. The Home gesture still goes to Home. When you enter the screen, choose **Join a Network**, **Calibre Wireless**, **Create Hotspot**, or, on devices that support it, **USB Drive**. The reader then starts the web server for the selected mode. The screen also lists **OPDS Browser**, which opens your OPDS catalogs; with no server configured it opens the server list so you can add one (see [OPDS Servers](#365-opds-servers-multiple-libraries)). When the plugin system is off and a server is configured, OPDS Browser is on the Home screen instead.
 
 See the [web server docs](./docs/webserver.md) for more information on how to connect to the web server and upload files.
 
@@ -659,7 +659,7 @@ Transparent overlay files are intentionally separate from normal sleep images. R
 > - X3: Use a resolution of 528x792 pixels to match the device's screen resolution.
 
 > [!TIP]
-> You can set an image as the sleep screen cover directly from the BMP image viewer in the **[Browse Files](#33-browse-files-screen)** screen. On touch devices, long-press the image.
+> You can set an image as the sleep screen cover directly from the BMP image viewer in the **[Files](#33-files-screen)** screen. On touch devices, long-press the image.
 
 ---
 
@@ -731,7 +731,7 @@ See [docs/dictionary.md](docs/dictionary.md) for supported formats, setup, and w
 ### System Navigation
 
 * **Return to Home:** Press the **Back** button to close the book and return to the **[Home](#31-home-screen)** screen.
-* **Return to Browse Files:** Press and hold the **Back** button to close the book and return to the **[Browse Files](#33-browse-files-screen)** screen.
+* **Return to Files:** Press and hold the **Back** button to close the book and return to the **[Files](#33-files-screen)** screen.
 * **Reader Menu:** Press **Confirm** to open the **[Reader Menu](#5-reader-menu)**, which includes chapter navigation, reading options, and more.
 * **Long-press Confirm (configurable):** Holding **Confirm** runs the function chosen by the **Menu long press** setting in **[Controls Settings](#363-controls)** — including bookmarks, KOReader Sync, dictionary lookup, or clipping selection. A short press always opens the Reader Menu.
 
@@ -806,7 +806,7 @@ Each book can store up to **1,024 clippings on ESP32-S3 devices** or **256 on ES
 
 The structured clipping store under `.crosspoint/clippings` keeps up to **4 KiB of UTF-8 text per clipping**. Longer selections must be shortened before saving. CrossPoint also appends up to **2,000 UTF-8 bytes** of each saved excerpt to `My Clippings.txt` in the root of the SD card, using Kindle-compatible formatting. If that export fails, the clipping remains saved and the message reports the export failure.
 
-The root `My Clippings.txt` export stays available in Browse Files and file transfer, but is excluded from Library and Home's book lists, including after viewing it. A same-named file in another folder is treated as an ordinary book.
+The root `My Clippings.txt` export stays available in Files and file transfer, but is excluded from Library and Home's book lists, including after viewing it. A same-named file in another folder is treated as an ordinary book.
 
 Local book and folder moves carry clipping data with them. Deleting a local book removes its local clipping data; it does not delete already synced server copies or historical entries in `My Clippings.txt`. Deleting an individual clipping likewise leaves the text export untouched, but queues its server deletion for the next enabled manual sync. `My Clippings.txt` is an independent append-only export, not the source used to restore or sync highlights.
 

@@ -22,8 +22,8 @@ its assigned action. Set Double click to **Ignore** to remove this wait.
 Reader actions such as page turn and footnotes apply while reading. Sleep,
 screen refresh, Confirm, and the frontlight retain their usual behavior.
 
-On X4 Pro, set **Home button gestures → Tap → Browse Files** to return from
+On X4 Pro, set **Home button gestures → Tap → Files** to return from
 a reading page to the folder containing the current book. You can also assign
-Browse Files to Double Tap or Long Press. These assignments apply while reading;
+Files to Double Tap or Long Press. These assignments apply while reading;
 the default Tap action remains Home. Set Double Tap to Ignore if you want a
 single tap to act without waiting for a possible second tap.

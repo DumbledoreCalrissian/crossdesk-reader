@@ -10,7 +10,7 @@ sh test/clippings_export/run.sh
 
 Cards are isolated under workspace QA artifacts. Checks cover removal of saved
 root-export recents, three Home themes, Library indexing, a nested same-named
-book, viewing the export from Browse Files and optional localhost HTTP listing
+book, viewing the export from Files and optional localhost HTTP listing
 and byte-for-byte download. The HTTP check needs permission to bind/connect to
 localhost ports 18090/18091.
 
