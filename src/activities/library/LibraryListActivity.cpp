@@ -762,7 +762,8 @@ int LibraryListActivity::cachedEpubProgress(const std::string& path) {
     if (!entry.path.empty() && entry.path == path) return entry.percent;
   // A never-opened book costs one existence check; an opened one loads its
   // cached spine sizes once per visit.
-  const int percent = loadBookProgress(path);
+  // Read-only: TXT/Markdown use cached metadata instead of a full book load.
+  const int percent = loadBookProgress(path, /*readOnly=*/true);
   progressCache[progressCacheNext] = ProgressCacheEntry{path, static_cast<int8_t>(percent)};
   progressCacheNext = (progressCacheNext + 1) % PROGRESS_CACHE_SIZE;
   return percent;
@@ -918,7 +919,7 @@ void LibraryListActivity::buildRows(UiScreen& screen) {
       if (!rowTextFor(entry, title, author, &rowFile, &rowPath)) continue;
       auto& percentText = winPercents[static_cast<size_t>(rows)];
       percentText[0] = '\0';
-      if (FsHelpers::hasEpubExtension(rowPath)) {
+      if (FsHelpers::hasReflowableBookExtension(rowPath)) {
         const int percent = cachedEpubProgress(rowPath);
         if (percent >= 0) snprintf(percentText.data(), percentText.size(), "%d%%", percent);
       }

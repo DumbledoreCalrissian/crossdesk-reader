@@ -16,10 +16,11 @@
 namespace {
 BookReadingSummary loadSummary(const std::string& path, readingstats::Store* store, const bool includeOtherFormats) {
   BookReadingSummary summary;
-  const bool isEpub = FsHelpers::hasEpubExtension(path);
-  if (!isEpub && !includeOtherFormats) return summary;
+  // EPUB, TXT and Markdown have reading statistics; other formats only progress.
+  const bool hasStats = FsHelpers::hasReflowableBookExtension(path);
+  if (!hasStats && !includeOtherFormats) return summary;
   summary.percent = loadBookProgress(path, /*readOnly=*/true);
-  if (!isEpub || !store) return summary;
+  if (!hasStats || !store) return summary;
   // Read-only: the reader owns the only writer, and it is closed while Home runs.
   const auto status = store->load(path);
   if (status == readingstats::Store::Status::Ok || status == readingstats::Store::Status::Recovered) {

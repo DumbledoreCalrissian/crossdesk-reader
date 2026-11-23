@@ -240,6 +240,10 @@ ClipSelectionActivity::Selection lookupReturnSelectionFor(const ClippingResult& 
 
 bool EpubReaderActivity::isEpubBook() const { return FsHelpers::hasEpubExtension(std::string_view(bookPath)); }
 
+bool EpubReaderActivity::hasReadingStats() const {
+  return FsHelpers::hasReflowableBookExtension(std::string_view(bookPath));
+}
+
 void EpubReaderActivity::pauseStatistics() {
   RenderLock lock;
   if (readingStatistics) readingStatistics->pause(millis());
@@ -259,7 +263,9 @@ void EpubReaderActivity::onExit() {
 void EpubReaderActivity::queueReadingSession() {
   if (!readingStatistics) return;
   const BookReadingStats::Session session = readingStatistics->takeSession();
-  if (session.seconds < readingSessionLog::MIN_SECONDS || !epub || !readingSessionLog::enabled()) return;
+  // Only EPUB sessions are uploaded (SCOPE: other formats stay local).
+  if (!isEpubBook() || session.seconds < readingSessionLog::MIN_SECONDS || !epub || !readingSessionLog::enabled())
+    return;
   const int64_t now = trustedtime::trustedNow();
   if (now <= 0) return;  // no trusted clock: the server could not place the session
   const int64_t start = now - static_cast<int64_t>((millis() - session.startedAt) / 1000);
@@ -338,7 +344,7 @@ bool EpubReaderActivity::loadBook() {
     return false;
   }
   epub = std::move(loadedEpub);
-  if (isEpubBook() && !statisticsLoadAttempted) {
+  if (hasReadingStats() && !statisticsLoadAttempted) {
     statisticsLoadAttempted = true;
     readingStatistics = makeUniqueNoThrow<BookReadingStats>(bookPath, millis());
     if (!readingStatistics) LOG_ERR("STATS", "Allocation failed: %u bytes", unsigned(sizeof(BookReadingStats)));
@@ -437,7 +443,7 @@ void EpubReaderActivity::openReaderMenu() {
   startActivityForResult(std::make_unique<EpubReaderMenuActivity>(
                              renderer, mappedInput, epub->getTitle(), position.displayPage(), position.totalPages,
                              bookProgressPercent, SETTINGS.orientation, !currentPageFootnotes.empty(),
-                             !cachedBookmarks.empty(), CLIPPINGS.hasClippings(), isEpubBook(), selectedMenuAction),
+                             !cachedBookmarks.empty(), CLIPPINGS.hasClippings(), hasReadingStats(), selectedMenuAction),
                          [this](const ActivityResult& result) {
                            const auto& menu = std::get<MenuResult>(result.data);
 
@@ -1305,7 +1311,7 @@ void EpubReaderActivity::onReaderMenuConfirm(EpubReaderMenuActivity::MenuAction 
 
   switch (action) {
     case EpubReaderMenuActivity::MenuAction::BOOK_STATISTICS: {
-      if (!isEpubBook()) break;
+      if (!hasReadingStats()) break;
       pauseStatistics();
       const auto position = chapterPosition();
       const int percent = position.hasTotal() && epub->getBookSize() > 0 ? bookPercentFor(position) : -1;
@@ -3299,7 +3305,7 @@ void EpubReaderActivity::applyReaderTextSettings() {
 void EpubReaderActivity::buildMoreActions() {
   using MA = EpubReaderMenuActivity::MenuAction;
   EpubReaderMenuActivity::buildMenuItems(moreItems, !currentPageFootnotes.empty(), !cachedBookmarks.empty(),
-                                         CLIPPINGS.hasClippings(), isEpubBook());
+                                         CLIPPINGS.hasClippings(), hasReadingStats());
   moreItems.erase(std::remove_if(moreItems.begin(), moreItems.end(),
                                  [](const auto& item) {
                                    return item.action == MA::SELECT_CHAPTER || item.action == MA::TEXT_SETTINGS;

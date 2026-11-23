@@ -33,6 +33,8 @@ class EpubReaderActivity final : public ReaderActivity {
   void queueReadingSession();
   void pauseStatistics();
   bool isEpubBook() const;
+  // EPUB, TXT and Markdown keep local reading statistics.
+  bool hasReadingStats() const;
   std::unique_ptr<Epub::SyncMetadata> vocabularyMetadata;
   std::unique_ptr<Section> section = nullptr;
   int currentSpineIndex = 0;

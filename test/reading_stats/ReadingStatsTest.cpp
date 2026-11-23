@@ -524,6 +524,26 @@ TEST_F(EpubStatistics, DeterministicSequencePersistsAfterRestart) {
   EXPECT_EQ(restarted.totals(), stats.totals());
 }
 
+TEST_F(EpubStatistics, TxtAndMarkdownKeepSeparateRecords) {
+  constexpr const char* TXT = "/books/notes.txt";
+  constexpr const char* MD = "/books/notes.md";
+  {
+    BookReadingStats txt(TXT, 0);
+    txt.pageShown(0);
+    successfulDeparture(txt, 5000, Departure::ForwardTurn);
+    txt.stop(5000);
+    BookReadingStats md(MD, 0);
+    md.pageShown(0);
+    md.stop(3000);
+  }
+  BookReadingStats txt(TXT, 0);
+  BookReadingStats md(MD, 0);
+  BookReadingStats epub(BOOK, 0);
+  EXPECT_EQ(txt.totals(), (Totals{5000, 1}));
+  EXPECT_EQ(md.totals(), (Totals{3000, 0}));
+  EXPECT_EQ(epub.totals(), (Totals{}));
+}
+
 TEST_F(EpubStatistics, SessionMatchesCountedTimeAndIsTakenOnce) {
   {
     BookReadingStats earlier(BOOK, 0);

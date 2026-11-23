@@ -6,7 +6,7 @@
 
 struct RecentBook;
 
-// Saved book progress and EPUB reading time, read once per Home visit.
+// Saved book progress and EPUB/TXT/Markdown reading time, read once per Home visit.
 struct BookReadingSummary {
   int percent = -1;  // saved position (see loadBookProgress), -1 when unavailable
   bool timeKnown = false;
@@ -15,7 +15,7 @@ struct BookReadingSummary {
 };
 
 // Fills out[i] for books[i], i < count; the rest stay unknown. Read-only; one
-// stats workspace serves every EPUB. Coverflow can also ask for saved progress
+// stats workspace serves every book with statistics. Coverflow can also ask for saved progress
 // in other formats.
 void loadBookReadingSummaries(const std::vector<RecentBook>& books, BookReadingSummary* out, size_t count,
                               bool includeOtherFormats = false);

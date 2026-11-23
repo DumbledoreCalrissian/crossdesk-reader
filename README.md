@@ -64,7 +64,7 @@ above it or press Back. Back does nothing on Coverflow Home when the sheet is
 closed.
 
 **Coverflow Progress** is on by default. The line below the centre cover can
-show the title, saved progress, and recorded EPUB reading time.
+show the title, saved progress, and recorded reading time.
 You can turn it off in **Settings > Display** while using Coverflow.
 
 <p align="center">
@@ -90,10 +90,11 @@ same order. [Todo guide](docs/picco-todo.md)
 - [T9 keypad](USER_GUIDE.md#36-settings): a phone-style keypad for every text field, as an option to the
   full keyboard. Tap a key again to cycle its letters. Choose it in Settings >
   System > Keyboard type, and set its size with Keypad height.
-- [Reading statistics](docs/picco-reading-stats.md): Book statistics in the EPUB
-  reader menu (progress, reading time, forward page turns, and a confirmed reset
-  that keeps position and bookmarks). Library shows each opened EPUB's saved
-  percentage. Home can show the current EPUB's progress and reading time.
+- [Reading statistics](docs/picco-reading-stats.md): Book statistics in the reader
+  menu for EPUB, TXT and Markdown (progress, reading time, forward page turns, and
+  a confirmed reset that keeps position and bookmarks). Library shows each opened
+  book's saved percentage. Home can show the current book's progress and reading
+  time.
 - Monthly **Statistics**: a read-only page with one month of the reading
   calendar. Open it from Desk, the Coverflow Reading card or the other themes'
   Home menus. In Cover Grid, use the chart icon.

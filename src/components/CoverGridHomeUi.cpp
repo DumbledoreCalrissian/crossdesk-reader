@@ -50,7 +50,7 @@ void CoverGridHomeUi::begin(const std::vector<RecentBook>& recent, const SlotTab
   timeText[0] = '\0';
   if (hasContinueReading && !books->empty()) {
     const auto& path = books->front().path;
-    if (FsHelpers::hasEpubExtension(path)) {
+    if (FsHelpers::hasReflowableBookExtension(path)) {
       progress = summaries[0].percent;
       formatReadingTime(summaries[0], timeText, sizeof(timeText));
     } else {

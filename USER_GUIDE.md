@@ -293,7 +293,7 @@ Settings are grouped into **System**, **Display**, **Reader**, **Controls**, **L
 
 - **Coverflow Progress** (shown when Coverflow is selected): On by default. The
   line below the centre cover shows the title, a bar and percentage when saved
-  progress is available, and recorded reading time when available for an EPUB.
+  progress is available, and recorded reading time when available (EPUB, TXT and Markdown).
   On very narrow covers, the line shows the values that fit. Choose Off to hide
   the line and centre the cover.
 
