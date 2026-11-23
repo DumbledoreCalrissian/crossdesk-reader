@@ -64,7 +64,7 @@ above it or press Back. Back does nothing on Coverflow Home when the sheet is
 closed.
 
 **Coverflow Progress** is on by default. The line below the centre cover can
-show the title, saved progress, and recorded reading time.
+show saved progress and recorded reading time.
 You can turn it off in **Settings > Display** while using Coverflow.
 
 <p align="center">

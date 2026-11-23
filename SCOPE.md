@@ -118,7 +118,8 @@ with its neighbours peeking at the screen edges, all middle-aligned. Tapping the
 centre cover opens the book; a horizontal swipe or Up/Down moves between
 covers, and tapping a side cover brings it to the centre. Back does nothing on
 this Home. An optional line under the cover, controlled by one On/Off setting,
-shows the centre book's title and progress. Portrait layout; other
+shows the centre book's progress bar, percentage and reading time; no book
+title is shown under the covers. Portrait layout; other
 orientations reuse it scaled to fit.
 
 A swipe up on Home opens a bottom sheet, styled like the quick-controls sheet,

@@ -6,7 +6,6 @@
 
 #include <algorithm>
 #include <cstdio>
-#include <cstring>
 
 #include "components/UITheme.h"
 #include "fontIds.h"
@@ -28,7 +27,6 @@ constexpr int HALO_BANDS = 4;
 constexpr int HALO_BAND_W = 4;
 constexpr int HALO_OUTSET = HALO_BANDS * HALO_BAND_W;
 static_assert(HALO_OUTSET < SIDE_GAP);
-constexpr int PROGRESS_TITLE_FONT = UI_10_FONT_ID;
 constexpr int PROGRESS_GAP = 12;
 constexpr int STATS_GAP = 6;
 constexpr int BAR_HEIGHT = 8;
@@ -43,41 +41,6 @@ constexpr int SPINE = 5;
 constexpr int TEXT_INSET = 32;
 constexpr int GAP = 16;
 
-void drawProgressTitle(const GfxRenderer& renderer, const Rect slot, const int y, const std::string& title) {
-  constexpr auto STYLE = EpdFontFamily::BOLD;
-  constexpr char ELLIPSIS[] = "\xe2\x80\xa6";
-  char fitted[128];
-  constexpr size_t MAX_PREFIX = sizeof(fitted) - sizeof(ELLIPSIS);
-  if (title.size() <= MAX_PREFIX) {
-    const int width = renderer.getTextWidth(PROGRESS_TITLE_FONT, title.c_str(), STYLE);
-    if (width <= slot.width) {
-      renderer.drawText(PROGRESS_TITLE_FONT, slot.x + (slot.width - width) / 2, y, title.c_str(), true, STYLE);
-      return;
-    }
-  }
-
-  const auto fitPrefix = [&](size_t length) {
-    while (length > 0 && (static_cast<uint8_t>(title[length]) & 0xc0) == 0x80) --length;
-    memcpy(fitted, title.data(), length);
-    memcpy(fitted + length, ELLIPSIS, sizeof(ELLIPSIS));
-    return renderer.getTextWidth(PROGRESS_TITLE_FONT, fitted, STYLE);
-  };
-  // Each probe rounds back to a UTF-8 boundary. Search byte offsets to bound the number of measurements.
-  size_t low = 0;
-  size_t high = std::min(title.size(), MAX_PREFIX);
-  while (low < high) {
-    const size_t mid = low + (high - low + 1) / 2;
-    if (fitPrefix(mid) <= slot.width) {
-      low = mid;
-    } else {
-      high = mid - 1;
-    }
-  }
-  const int width = fitPrefix(low);
-  if (width <= slot.width) {
-    renderer.drawText(PROGRESS_TITLE_FONT, slot.x + (slot.width - width) / 2, y, fitted, true, STYLE);
-  }
-}
 }  // namespace
 
 void CoverflowHomeUi::begin(const std::vector<RecentBook>* recent, const HomeMenuItem slotItem,
@@ -135,9 +98,9 @@ Rect CoverflowHomeUi::centreSlot(const BookReadingSummary* summary) const {
 }
 
 int CoverflowHomeUi::progressHeight(const BookReadingSummary& summary) const {
-  int height = PROGRESS_GAP + renderer.getLineHeight(PROGRESS_TITLE_FONT);
-  if (summary.percent >= 0) height += STATS_GAP + BAR_HEIGHT;
-  if (summary.percent >= 0 || summary.timeKnown) height += STATS_GAP + renderer.getLineHeight(UI_10_FONT_ID);
+  if (summary.percent < 0 && !summary.timeKnown) return 0;
+  int height = PROGRESS_GAP + renderer.getLineHeight(UI_10_FONT_ID);
+  if (summary.percent >= 0) height += BAR_HEIGHT + STATS_GAP;
   return height;
 }
 
@@ -252,20 +215,16 @@ void CoverflowHomeUi::drawHome() {
                      static_cast<size_t>(cur), UITheme::getCoverThumbPath(book.coverBmpPath, slot.height),
                      /*artShift=*/0);
   }
-  if (summary) drawProgress(shown, book, *summary);
+  if (summary) drawProgress(shown, *summary);
 }
 
-void CoverflowHomeUi::drawProgress(const Rect cover, const RecentBook& book, const BookReadingSummary& summary) const {
-  const int titleY = cover.y + cover.height + HALO_OUTSET + PROGRESS_GAP;
-  const int titleH = renderer.getLineHeight(PROGRESS_TITLE_FONT);
-  // Keep title and stats ink within the bar, including glyph bearings.
+void CoverflowHomeUi::drawProgress(const Rect cover, const BookReadingSummary& summary) const {
+  // Keep stats ink within the bar, including glyph bearings.
   const auto [clipX, clipY, clipWidth, clipHeight] = renderer.getClipRect();
   const int barLeft = std::max(clipX, cover.x);
   const int barRight = std::min(clipX + clipWidth, cover.x + cover.width);
   renderer.setClipRect(barLeft, clipY, std::max(0, barRight - barLeft), clipHeight);
-  drawProgressTitle(renderer, cover, titleY, book.title);
-
-  const int barY = titleY + titleH + STATS_GAP;
+  const int barY = cover.y + cover.height + HALO_OUTSET + PROGRESS_GAP;
   int statsY = barY;
   char percent[12]{};
   if (summary.percent >= 0) {

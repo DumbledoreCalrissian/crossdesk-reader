@@ -65,7 +65,7 @@ class CoverflowHomeUi final {
   Rect arrowRect() const;
   void drawArrow() const;
   void drawTitleCard(Rect rect, const RecentBook& book) const;
-  void drawProgress(Rect cover, const RecentBook& book, const BookReadingSummary& summary) const;
+  void drawProgress(Rect cover, const BookReadingSummary& summary) const;
   void drawSideCover(Rect centre, bool right, int centreBook);
   void drawHalo(Rect cover) const;
   bool drawSideArt(Rect rect, int left, int width, const std::string& path);

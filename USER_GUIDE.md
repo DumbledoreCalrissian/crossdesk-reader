@@ -292,7 +292,7 @@ Settings are grouped into **System**, **Display**, **Reader**, **Controls**, **L
     Home when the sheet is closed.
 
 - **Coverflow Progress** (shown when Coverflow is selected): On by default. The
-  line below the centre cover shows the title, a bar and percentage when saved
+  line below the centre cover shows a bar and percentage when saved
   progress is available, and recorded reading time when available (EPUB, TXT, Markdown and XTC).
   On very narrow covers, the line shows the values that fit. Choose Off to hide
   the line and centre the cover.
